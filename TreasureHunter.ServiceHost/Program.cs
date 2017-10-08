@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
-namespace TreasureHunter
+namespace TreasureHunter.ServiceHost
 {
     class Program
     {
         static void Main(string[] args)
         {
+            new Service.TreasureHunter().Init();
         }
     }
 }
