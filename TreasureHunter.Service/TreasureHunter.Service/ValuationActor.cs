@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Akka.Actor;
 using SteamTrade.TradeOffer;
-using TreasureHunter.Service.Message;
+using TreasureHunter.Common;
 
 namespace TreasureHunter.Service
 {
@@ -14,7 +14,7 @@ namespace TreasureHunter.Service
         private Dictionary<string, TradeOffer> _offerDictionary;
         public static Props Props()
         {
-            return Akka.Actor.Props.Create(() => new PaymentActor());
+            return Akka.Actor.Props.Create(() => new ValuationActor());
         }
 
         public ValuationActor()
@@ -24,7 +24,8 @@ namespace TreasureHunter.Service
 
         private void Valuate(ValuationMessage msg)
         {
-            Sender.Tell(6666);
+            msg.Price = 66666;
+            Sender.Tell(msg);
         }
     }
 }

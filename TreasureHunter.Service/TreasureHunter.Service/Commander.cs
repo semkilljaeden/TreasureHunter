@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Akka.Actor;
 using log4net;
-
+using TreasureHunter.Common;
 namespace TreasureHunter.Service
 {
     class Commander
@@ -55,9 +55,9 @@ namespace TreasureHunter.Service
         {
             if (string.IsNullOrEmpty(auth))
             {
-                _routees.ForEach(r => r.Tell(new Message.Message()
+                _routees.ForEach(r => r.Tell(new Message()
                 {
-                    Type = Message.Message.MessageType.Start,
+                    Type = Message.MessageType.Start,
                 }));
             }
             else
@@ -68,9 +68,9 @@ namespace TreasureHunter.Service
                     Console.WriteLine("Wrong bot name");
                     return;
                 }
-                routee.Tell(new Message.Message()
+                routee.Tell(new Message()
                 {
-                    Type = Message.Message.MessageType.Start,
+                    Type = Message.MessageType.Start,
                 });
             }
 
@@ -125,9 +125,9 @@ namespace TreasureHunter.Service
                 // Take the rest of the input as is
                 var command = cmd.Remove(0, cs[0].Length + 1);
 
-                _routees.FirstOrDefault(r => r.Path.Name == cs[0])?.Tell(new Message.Message()
+                _routees.FirstOrDefault(r => r.Path.Name == cs[0])?.Tell(new Message()
                 {
-                    Type = Message.Message.MessageType.Exec,
+                    Type = Message.MessageType.Exec,
                     MessageText = command
                 });
             }
@@ -157,9 +157,9 @@ namespace TreasureHunter.Service
                 var input = inpt.Remove(0, cs[0].Length + 1);
 
 
-                _routees.FirstOrDefault(r => r.Path.Name == cs[0])?.Tell(new Message.Message()
+                _routees.FirstOrDefault(r => r.Path.Name == cs[0])?.Tell(new Message()
                 {
-                    Type = Message.Message.MessageType.Input,
+                    Type = Message.MessageType.Input,
                     MessageText = input
                 });
             }

@@ -87,10 +87,6 @@
     <Compile Include="TreasureHunter.Service\BotActor.cs" />
     <Compile Include="TreasureHunter.Service\Commander.cs" />
     <Compile Include="TreasureHunter.Service\Configuration.cs" />
-    <Compile Include="TreasureHunter.Service\Message\Confirmation.cs" />
-    <Compile Include="TreasureHunter.Service\Message\Message.cs" />
-    <Compile Include="TreasureHunter.Service\Message\PaymentMessage.cs" />
-    <Compile Include="TreasureHunter.Service\Message\ValuationMessage.cs" />
     <Compile Include="TreasureHunter.Service\Notifications.cs" />
     <Compile Include="TreasureHunter.Service\PaymentActor.cs" />
     <Compile Include="TreasureHunter.Service\TreasureHunter.cs" />
@@ -104,12 +100,17 @@
     <Compile Include="TreasureHunter.Service\ValuationActor.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SteamTrade\SteamTrade.csproj">
       <Project>{6cec0333-81eb-40ee-85d1-941363626fc7}</Project>
       <Name>SteamTrade</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TreasureHunter.Common\TreasureHunter.Common.csproj">
+      <Project>{591cf921-3027-4114-b062-2dadf4538f24}</Project>
+      <Name>TreasureHunter.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SteamTrade.TradeOffer;
 
-namespace TreasureHunter.Service.Message
+namespace TreasureHunter.Common
 {
     public class PaymentMessage
     {

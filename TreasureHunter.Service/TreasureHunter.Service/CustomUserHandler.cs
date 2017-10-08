@@ -101,7 +101,10 @@ namespace TreasureHunter.Service
                     SendChatMessage("Trade completed, thank you!");
                     break;
                 case TradeOfferState.TradeOfferStateActive:
-                    OnNewTradeOffer(offer);
+                    if (!offer.IsOurOffer)
+                    {
+                        OnNewTradeOffer(offer);
+                    }
                     break;
                 case TradeOfferState.TradeOfferStateNeedsConfirmation:
                     Log.Info($"Trade offer {offer.TradeOfferId} from {offer.PartnerSteamId.Render()} Needs Confirmation");
@@ -114,7 +117,7 @@ namespace TreasureHunter.Service
                     Log.Info($"Trade offer {offer.TradeOfferId} was countered");
                     break;
                 default:
-                    Log.Info($"Trade offer {offer.TradeOfferId} failed");
+                    Log.Info($"Trade offer {offer.TradeOfferId} failed because of {offer.OfferState}");
                     break;
             }
         }
@@ -130,8 +133,8 @@ namespace TreasureHunter.Service
                 i => Schema.GetSchema().GetItem(myInventory.GetItem((ulong)i.AssetId).Defindex)).ToList();
             var theirItemsWithSchema = theirItems.Select(
                 i => Schema.GetSchema().GetItem(OtherInventory.GetItem((ulong)i.AssetId).Defindex)).ToList();
-            Log.Info("They want " + Environment.NewLine + myItemsWithSchema.Select(i => i.ToString()).Aggregate((a, b) => a + Environment.NewLine + b));
-            Log.Info("And I will get " + Environment.NewLine + theirItemsWithSchema.Select(i => i.ToString()).Aggregate((a, b) => a + Environment.NewLine + b));
+            Log.Info("They want " + Environment.NewLine + string.Join(Environment.NewLine, myItemsWithSchema.Select(i => i.ToString())));
+            Log.Info("And I will get " + Environment.NewLine + string.Join(Environment.NewLine, theirItemsWithSchema.Select(i => i.ToString())));
             string token = Token.GenerateToken();
             double price = Bot.Valuate(myItemsWithSchema, theirItemsWithSchema);
             Log.Info($"{offer.TradeOfferId} from {offer.PartnerSteamId.Render()} has Token = {token}, Price = {price}");

@@ -15,9 +15,8 @@ using SteamKit2;
 using SteamKit2.Internal;
 using SteamTrade;
 using SteamTrade.TradeOffer;
-using TreasureHunter.Service.Message;
 using TreasureHunter.Service.SteamGroups;
-
+using TreasureHunter.Common;
 namespace TreasureHunter.Service
 {
     public class BotActor : ReceiveActor
@@ -31,21 +30,21 @@ namespace TreasureHunter.Service
         {
             _paymentActor = paymentActor;
             _valuationActor = valuationActor;
-            Receive<Message.Message>(msg => RunCommand(msg));
+            Receive<Message>(msg => RunCommand(msg));
             Receive<PaymentMessage>(msg => OnPaymentUpdate(msg));
         }
 
-        private void RunCommand(Message.Message message)
+        private void RunCommand(Message message)
         {
             switch (message.Type)
             {
-                case Message.Message.MessageType.Start:
+                case Message.MessageType.Start:
                     StartBot();
                     break;
-                case Message.Message.MessageType.Exec:
+                case Message.MessageType.Exec:
                     HandleBotCommand(message.MessageText);
                     break;
-                case Message.Message.MessageType.Input:
+                case Message.MessageType.Input:
                     HandleInput(message.MessageText);
                     break;
             }
@@ -67,11 +66,11 @@ namespace TreasureHunter.Service
 
         public double Valuate(List<Schema.Item> myItems, List<Schema.Item> theirItems)
         {
-            return (double)_valuationActor.Ask(new ValuationMessage()
+            return _valuationActor.Ask<ValuationMessage>(new ValuationMessage()
             {
                 MyItemList = myItems,
                 TheirItemList = theirItems
-            }).Result;
+            }).Result.Price;
         }
 
         private void OnPaymentUpdate(PaymentMessage msg)

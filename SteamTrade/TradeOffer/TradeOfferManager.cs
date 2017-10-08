@@ -9,7 +9,7 @@ namespace SteamTrade.TradeOffer
 {
     public class TradeOfferManager
     {
-        private readonly Dictionary<string, TradeOfferState> knownTradeOffers = new Dictionary<string, TradeOfferState>();
+        private readonly Dictionary<string, TradeOfferState> _knownTradeOffers = new Dictionary<string, TradeOfferState>();
         private readonly OfferSession _session;
         private readonly TradeOfferWebAPI _webApi;
         private readonly Queue<Offer> _unhandledTradeOfferUpdates; 
@@ -77,7 +77,7 @@ namespace SteamTrade.TradeOffer
 
         private bool HandleTradeOfferUpdate(Offer offer)
         {
-            if(knownTradeOffers.ContainsKey(offer.TradeOfferId) && knownTradeOffers[offer.TradeOfferId] == offer.TradeOfferState)
+            if(_knownTradeOffers.ContainsKey(offer.TradeOfferId) && _knownTradeOffers[offer.TradeOfferId] == offer.TradeOfferState)
             {
                 return false;
             }
@@ -112,7 +112,7 @@ namespace SteamTrade.TradeOffer
 
         private void SendOfferToHandler(Offer offer)
         {
-            knownTradeOffers[offer.TradeOfferId] = offer.TradeOfferState;
+            _knownTradeOffers[offer.TradeOfferId] = offer.TradeOfferState;
             OnTradeOfferUpdated(new TradeOffer(_session, offer));
         }
 

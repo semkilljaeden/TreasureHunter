@@ -5,11 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using SteamTrade;
 
-namespace TreasureHunter.Service.Message
+namespace TreasureHunter.Common
 {
-    class ValuationMessage
+    public class ValuationMessage
     {
         public List<Schema.Item> MyItemList { get; set; }
         public List<Schema.Item> TheirItemList { get; set; }
+        public double Price { get; set; }
+
     }
 }

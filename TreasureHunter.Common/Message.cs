@@ -1,4 +1,4 @@
-﻿namespace TreasureHunter.Service.Message
+﻿namespace TreasureHunter.Common
 {
     public class Message
     {

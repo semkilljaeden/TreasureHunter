@@ -24,7 +24,7 @@ namespace TreasureHunter.Service
             }
             _system = ActorSystem.Create("TreasureHunter");
             var paymentActor = _system.ActorOf(PaymentActor.Props());
-            var valuationActor = _system.ActorOf(PaymentActor.Props());
+            var valuationActor = _system.ActorOf(ValuationActor.Props());
             var routees = config.Bots.Select(bot => _system.ActorOf(BotActor.Props(bot, config.ApiKey, (x, y) => new CustomUserHandler(x, y), paymentActor, valuationActor), bot.DisplayName)).ToList();
             Schema.Init(config.ApiKey);
             Commander commander = new Commander(routees);

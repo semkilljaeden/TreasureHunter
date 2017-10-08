@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Akka.Actor;
 using SteamTrade.TradeOffer;
-using TreasureHunter.Service.Message;
+using TreasureHunter.Common;
 
 namespace TreasureHunter.Service
 {
