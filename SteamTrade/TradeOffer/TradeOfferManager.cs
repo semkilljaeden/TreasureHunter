@@ -4,6 +4,7 @@ using SteamKit2;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace SteamTrade.TradeOffer
 {
@@ -12,7 +13,7 @@ namespace SteamTrade.TradeOffer
         private readonly Dictionary<string, TradeOfferState> _knownTradeOffers = new Dictionary<string, TradeOfferState>();
         private readonly OfferSession _session;
         private readonly TradeOfferWebAPI _webApi;
-        private readonly Queue<Offer> _unhandledTradeOfferUpdates; 
+        private readonly ConcurrentQueue<Offer> _unhandledTradeOfferUpdates; 
 
         public DateTime LastTimeCheckedOffers { get; private set; }
 
@@ -24,7 +25,7 @@ namespace SteamTrade.TradeOffer
             LastTimeCheckedOffers = DateTime.MinValue;
             _webApi = new TradeOfferWebAPI(apiKey, steamWeb);
             _session = new OfferSession(_webApi, steamWeb);
-            _unhandledTradeOfferUpdates = new Queue<Offer>();
+            _unhandledTradeOfferUpdates = new ConcurrentQueue<Offer>();
         }
 
         public delegate void TradeOfferUpdatedHandler(TradeOffer offer);
@@ -51,28 +52,17 @@ namespace SteamTrade.TradeOffer
             if (offers?.AllOffers == null)
                 return;
 
-            lock(_unhandledTradeOfferUpdates)
+            foreach (var offer in offers.AllOffers)
             {
-                foreach(var offer in offers.AllOffers)
-                {
-                    _unhandledTradeOfferUpdates.Enqueue(offer);
-                }
+                _unhandledTradeOfferUpdates.Enqueue(offer);
             }
         }
 
         public bool HandleNextPendingTradeOfferUpdate()
         {
             Offer nextOffer;
-            lock (_unhandledTradeOfferUpdates)
-            {
-                if (!_unhandledTradeOfferUpdates.Any())
-                {
-                    return false;
-                }
-                nextOffer = _unhandledTradeOfferUpdates.Dequeue();
-            }
-
-            return HandleTradeOfferUpdate(nextOffer);
+            return _unhandledTradeOfferUpdates
+                       .TryDequeue(out nextOffer) && HandleTradeOfferUpdate(nextOffer);
         }
 
         private bool HandleTradeOfferUpdate(Offer offer)

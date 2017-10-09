@@ -7,7 +7,7 @@
     <DefineConstants>DEBUG;</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>7</LangVersion>
+    <LangVersion>6</LangVersion>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
@@ -84,20 +84,20 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Token.cs" />
-    <Compile Include="TreasureHunter.Service\BotActor.cs" />
-    <Compile Include="TreasureHunter.Service\Commander.cs" />
-    <Compile Include="TreasureHunter.Service\Configuration.cs" />
-    <Compile Include="TreasureHunter.Service\Notifications.cs" />
-    <Compile Include="TreasureHunter.Service\PaymentActor.cs" />
-    <Compile Include="TreasureHunter.Service\TreasureHunter.cs" />
-    <Compile Include="TreasureHunter.Service\CustomUserHandler.cs" />
-    <Compile Include="TreasureHunter.Service\SteamGroups\CMsgGroupInviteAction.cs" />
-    <Compile Include="TreasureHunter.Service\SteamGroups\CMsgInviteUserToGroup.cs" />
-    <Compile Include="TreasureHunter.Service\SteamGuardRequiredEventArgs.cs" />
-    <Compile Include="TreasureHunter.Service\SteamTradeDemoHandler.cs" />
-    <Compile Include="TreasureHunter.Service\TradeOfferUserHandler.cs" />
-    <Compile Include="TreasureHunter.Service\UserHandler.cs" />
-    <Compile Include="TreasureHunter.Service\ValuationActor.cs" />
+    <Compile Include="BotActor.cs" />
+    <Compile Include="Commander.cs" />
+    <Compile Include="Configuration.cs" />
+    <Compile Include="Notifications.cs" />
+    <Compile Include="PaymentActor.cs" />
+    <Compile Include="TreasureHunter.cs" />
+    <Compile Include="CustomUserHandler.cs" />
+    <Compile Include="SteamGroups\CMsgGroupInviteAction.cs" />
+    <Compile Include="SteamGroups\CMsgInviteUserToGroup.cs" />
+    <Compile Include="SteamGuardRequiredEventArgs.cs" />
+    <Compile Include="SteamTradeDemoHandler.cs" />
+    <Compile Include="TradeOfferUserHandler.cs" />
+    <Compile Include="UserHandler.cs" />
+    <Compile Include="ValuationActor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -105,7 +105,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SteamTrade\SteamTrade.csproj">
-      <Project>{6cec0333-81eb-40ee-85d1-941363626fc7}</Project>
+      <Project>{bda9a4a1-3b68-4f9e-be97-e2c11263b14b}</Project>
       <Name>SteamTrade</Name>
     </ProjectReference>
     <ProjectReference Include="..\TreasureHunter.Common\TreasureHunter.Common.csproj">

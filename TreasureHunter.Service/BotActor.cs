@@ -413,36 +413,6 @@ namespace TreasureHunter.Service
             }
         }
 
-        protected void SpawnTradeOfferPollingThread()
-        {
-            if (_tradeOfferThread == null)
-            {
-                _tradeOfferThread = new Thread(TradeOfferPollingFunction);
-                _tradeOfferThread.Start();
-            }
-        }
-
-        protected void CancelTradeOfferPollingThread()
-        {
-            _tradeOfferThread = null;
-        }
-
-        protected void TradeOfferPollingFunction()
-        {
-            while (_tradeOfferThread == Thread.CurrentThread)
-            {
-                try
-                {
-                    _tradeOfferManager.EnqueueUpdatedOffers();
-                }
-                catch (Exception e)
-                {
-                    Log.Error("Error while polling trade offers: " + e);
-                }
-
-                Thread.Sleep(_tradeOfferPollingIntervalSecs * 1000);
-            }
-        }
 
         public void HandleInput(string input)
         {
@@ -925,8 +895,40 @@ namespace TreasureHunter.Service
             public TradeOfferEscrowDurationParseException(string message) : base(message) { }
         }
 
-        #region Background Worker Methods
+        /// <summary>
+        /// Threads to do polling
+        /// </summary>
+        #region Background/Polling Worker Methods
+        protected void SpawnTradeOfferPollingThread()
+        {
+            if (_tradeOfferThread == null)
+            {
+                _tradeOfferThread = new Thread(TradeOfferPollingFunction);
+                _tradeOfferThread.Start();
+            }
+        }
 
+        protected void CancelTradeOfferPollingThread()
+        {
+            _tradeOfferThread = null;
+        }
+
+        protected void TradeOfferPollingFunction()
+        {
+            while (_tradeOfferThread == Thread.CurrentThread)
+            {
+                try
+                {
+                    _tradeOfferManager.EnqueueUpdatedOffers();
+                }
+                catch (Exception e)
+                {
+                    Log.Error("Error while polling trade offers: " + e);
+                }
+
+                Thread.Sleep(_tradeOfferPollingIntervalSecs * 1000);
+            }
+        }
         private void BackgroundWorkerOnRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs runWorkerCompletedEventArgs)
         {
             if (runWorkerCompletedEventArgs.Error != null)
