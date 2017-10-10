@@ -69,6 +69,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="AccessorTests.cs" />
     <Compile Include="DotaSchemaTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -80,6 +81,10 @@
     <ProjectReference Include="..\SteamTrade\SteamTrade.csproj">
       <Project>{BDA9A4A1-3B68-4F9E-BE97-E2C11263B14B}</Project>
       <Name>SteamTrade</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TreasureHunter.DataAccess\TreasureHunter.DataAccess.csproj">
+      <Project>{61FEE5E9-E0C0-4893-957E-A7F5FE2492F5}</Project>
+      <Name>TreasureHunter.DataAccess</Name>
     </ProjectReference>
   </ItemGroup>
   <Choose>
