@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -13,10 +14,12 @@ using Akka.Actor;
 using log4net;
 using SteamKit2;
 using SteamKit2.Internal;
-using SteamTrade;
-using SteamTrade.TradeOffer;
+using TreasureHunter.SteamTrade;
 using TreasureHunter.Service.SteamGroups;
 using TreasureHunter.Common;
+using TreasureHunter.SteamTrade;
+using TreasureHunter.SteamTrade.TradeOffer;
+
 namespace TreasureHunter.Service
 {
     public class BotActor : ReceiveActor
@@ -25,82 +28,41 @@ namespace TreasureHunter.Service
 
         private readonly IActorRef _paymentActor;
         private readonly IActorRef _valuationActor;
-        private IActorRef _mySelf;
-        public BotActor(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor) :
+        private readonly IActorRef _commandActor;
+        private ICancelable _cancelToken;
+        private ICancelable _tradeOfferCancelToken;
+        private readonly IActorRef MySelf;
+        public BotActor(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor, IActorRef commandActor) :
             this(info, apiKey, creator, false, false)
         {
             _paymentActor = paymentActor;
             _valuationActor = valuationActor;
-            Receive<Message>(msg => RunCommand(msg));
+            _commandActor = commandActor;
+            Receive<CommandMessage>(msg => RunCommand(msg));
             Receive<PaymentMessage>(msg => OnPaymentUpdate(msg));
+            TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+            MySelf = Self;
+        }
+        void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+        {
+            Log.Error(e.Exception);
         }
 
-        private void RunCommand(Message message)
+        private void RunCommand(CommandMessage commandMessage)
         {
-            switch (message.Type)
+            switch (commandMessage.Type)
             {
-                case Message.MessageType.Start:
+                case CommandMessage.MessageType.Start:
                     StartBot();
-                    _mySelf = Self;
                     break;
-                case Message.MessageType.Exec:
-                    HandleBotCommand(message.MessageText);
-                    break;
-                case Message.MessageType.Input:
-                    HandleInput(message.MessageText);
+                case CommandMessage.MessageType.Exec:
+                    HandleBotCommand(commandMessage.MessageText);
                     break;
             }
         }
-        public static Props Props(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor)
+        public static Props Props(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor, IActorRef commandActor)
         {
-            return Akka.Actor.Props.Create(() => new BotActor(info, apiKey, creator, paymentActor, valuationActor));
-        }
-
-        public void EnqueueForPayment(TradeOffer offer, string token, double price)
-        {
-            _paymentActor.Tell(new PaymentMessage()
-            {
-                Offer = offer,
-                Token = token,
-                Price = price
-            }, _mySelf);
-        }
-
-        public double Valuate(List<Schema.Item> myItems, List<Schema.Item> theirItems)
-        {
-            return _valuationActor.Ask<ValuationMessage>(new ValuationMessage()
-            {
-                MyItemList = myItems,
-                TheirItemList = theirItems
-            }).Result.Price;
-        }
-
-        private void OnPaymentUpdate(PaymentMessage msg)
-        {
-            double paid = msg.PaidAmmount;
-            SteamFriends.SendChatMessage(msg.Offer.PartnerSteamId, EChatEntryType.ChatMsg, $"Trade Token = {msg.Token}, Price = {msg.Price} -------> receive ${paid} in Singapore Dollar");
-            if (msg.IsPaid)
-            {                
-                var acceptResp = msg.Offer.Accept();
-                if (acceptResp.Accepted)
-                {
-                    SteamFriends.SendChatMessage(msg.Offer.PartnerSteamId, EChatEntryType.ChatMsg, $"Trade Token = {msg.Token}, Price = {msg.Price} -------> Payment Successful");
-                    if (AcceptAllMobileTradeConfirmations())
-                    {
-                        Log.Info("Accepted trade offer successfully : Trade ID: " + acceptResp.TradeId);
-                    }
-                    else
-                    {
-                        GetUserHandler(msg.Offer.PartnerSteamId).OnAutoTradeConfirmationFail(msg.Offer);
-                        Log.Info($"Waiting Manual Trade Confirmation On TradeOffer {msg.Token}");
-                    }
-                    
-                }
-                else
-                {
-                    Log.Warn("Trade Accept Attempt Fails, Error: " + acceptResp.TradeError);
-                }
-            }
+            return Akka.Actor.Props.Create(() => new BotActor(info, apiKey, creator, paymentActor, valuationActor, commandActor));
         }
         #endregion
 
@@ -109,10 +71,8 @@ namespace TreasureHunter.Service
         #region Private readonly variables
         private readonly SteamUser.LogOnDetails _logOnDetails;
         private readonly string _schemaLang;
-        private readonly string _logFile;
         private readonly Dictionary<SteamID, UserHandler> _userHandlers;
         private readonly UserHandlerCreator _createHandler;
-        private readonly BackgroundWorker _botThread;
         private readonly CallbackManager _steamCallbackManager;
         #endregion
 
@@ -125,17 +85,11 @@ namespace TreasureHunter.Service
         private string _myUserNonce;
         private string _myUniqueId;
         private bool _cookiesAreInvalid = true;
-        private List<SteamID> _friends;
-        private bool _disposed = false;
-        private string _consoleInput;
+        private List<SteamID> _friends;  
         private Thread _tradeOfferThread;
         #endregion
 
         #region Public readonly variables
-        /// <summary>
-        /// Userhandler class bot is running.
-        /// </summary>
-        public readonly string BotControlClass;
         /// <summary>
         /// The display name of bot to steam.
         /// </summary>
@@ -241,7 +195,6 @@ namespace TreasureHunter.Service
             Admins = config.Admins;
             ApiKey = !String.IsNullOrEmpty(config.ApiKey) ? config.ApiKey : apiKey;
             _createHandler = handlerCreator;
-            BotControlClass = config.BotControlClass;
             SteamWeb = new SteamWeb();
 
             // Hacking around https
@@ -257,15 +210,10 @@ namespace TreasureHunter.Service
             SteamFriends = SteamClient.GetHandler<SteamFriends>();
             SteamGameCoordinator = SteamClient.GetHandler<SteamGameCoordinator>();
             SteamNotifications = SteamClient.GetHandler<SteamNotifications>();
-
+            _threadCommunicator = new ConcurrentQueue<string>();
             _botThread = new BackgroundWorker { WorkerSupportsCancellation = true };
             _botThread.DoWork += BackgroundWorkerOnDoWork;
             _botThread.RunWorkerCompleted += BackgroundWorkerOnRunWorkerCompleted;
-        }
-
-        ~BotActor()
-        {
-            Dispose(false);
         }
 
         private void CreateFriendsListIfNecessary()
@@ -318,61 +266,6 @@ namespace TreasureHunter.Service
                 Thread.Yield();
             _userHandlers.Clear();
         }
-
-        /// <summary>
-        /// Creates a new trade with the given partner.
-        /// </summary>
-        /// <returns>
-        /// <c>true</c>, if trade was opened,
-        /// <c>false</c> if there is another trade that must be closed first.
-        /// </returns>
-        public bool OpenTrade(SteamID other)
-        {
-            if (CurrentTrade != null || CheckCookies() == false)
-                return false;
-            SteamTrade.Trade(other);
-            return true;
-        }
-
-        /// <summary>
-        /// Closes the current active trade.
-        /// </summary>
-        public void CloseTrade()
-        {
-            if (CurrentTrade == null)
-                return;
-            UnsubscribeTrade(GetUserHandler(CurrentTrade.OtherSID), CurrentTrade);
-            _tradeManager.StopTrade();
-            CurrentTrade = null;
-        }
-
-        void OnTradeTimeout(object sender, EventArgs args)
-        {
-            // ignore event params and just null out the trade.
-            GetUserHandler(CurrentTrade.OtherSID).OnTradeTimeout();
-        }
-
-        /// <summary>
-        /// Create a new trade offer with the specified partner
-        /// </summary>
-        /// <param name="other">SteamId of the partner</param>
-        /// <returns></returns>
-        public TradeOffer NewTradeOffer(SteamID other)
-        {
-            return _tradeOfferManager.NewOffer(other);
-        }
-
-        /// <summary>
-        /// Try to get a specific trade offer using the offerid
-        /// </summary>
-        /// <param name="offerId"></param>
-        /// <param name="tradeOffer"></param>
-        /// <returns></returns>
-        public bool TryGetTradeOffer(string offerId, out TradeOffer tradeOffer)
-        {
-            return _tradeOfferManager.TryGetOffer(offerId, out tradeOffer);
-        }
-
         public void HandleBotCommand(string command)
         {
             try
@@ -427,25 +320,107 @@ namespace TreasureHunter.Service
             }
         }
 
-
-        public void HandleInput(string input)
+        #region Callback Methods
+        /// <summary>
+        /// Creates a new trade with the given partner.
+        /// </summary>
+        /// <returns>
+        /// <c>true</c>, if trade was opened,
+        /// <c>false</c> if there is another trade that must be closed first.
+        /// </returns>
+        public bool OpenTrade(SteamID other)
         {
-            _consoleInput = input;
+            if (CurrentTrade != null || CheckCookies() == false)
+                return false;
+            SteamTrade.Trade(other);
+            return true;
         }
 
-        public string WaitForInput()
+        /// <summary>
+        /// Closes the current active trade.
+        /// </summary>
+        public void CloseTrade()
         {
-            _consoleInput = null;
-            while (true)
+            if (CurrentTrade == null)
+                return;
+            UnsubscribeTrade(GetUserHandler(CurrentTrade.OtherSID), CurrentTrade);
+            _tradeManager.StopTrade();
+            CurrentTrade = null;
+        }
+
+        void OnTradeTimeout(object sender, EventArgs args)
+        {
+            // ignore event params and just null out the trade.
+            GetUserHandler(CurrentTrade.OtherSID).OnTradeTimeout();
+        }
+
+        /// <summary>
+        /// Create a new trade offer with the specified partner
+        /// </summary>
+        /// <param name="other">SteamId of the partner</param>
+        /// <returns></returns>
+        public TradeOffer NewTradeOffer(SteamID other)
+        {
+            return _tradeOfferManager.NewOffer(other);
+        }
+
+        /// <summary>
+        /// Try to get a specific trade offer using the offerid
+        /// </summary>
+        /// <param name="offerId"></param>
+        /// <param name="tradeOffer"></param>
+        /// <returns></returns>
+        public bool TryGetTradeOffer(string offerId, out TradeOffer tradeOffer)
+        {
+            return _tradeOfferManager.TryGetOffer(offerId, out tradeOffer);
+        }
+
+        public void EnqueueForPayment(TradeOffer offer, string token, double price)
+        {
+            _paymentActor.Tell(new PaymentMessage()
             {
-                if (_consoleInput != null)
+                Offer = offer,
+                Token = token,
+                Price = price
+            }, MySelf);
+        }
+
+        public double Valuate(List<Schema.Item> myItems, List<Schema.Item> theirItems)
+        {
+            return _valuationActor.Ask<ValuationMessage>(new ValuationMessage()
+            {
+                MyItemList = myItems,
+                TheirItemList = theirItems
+            }).Result.Price;
+        }
+
+        private void OnPaymentUpdate(PaymentMessage msg)
+        {
+            double paid = msg.PaidAmmount;
+            SteamFriends.SendChatMessage(msg.Offer.PartnerSteamId, EChatEntryType.ChatMsg, $"Trade Token = {msg.Token}, Price = {msg.Price} -------> receive ${paid} in Singapore Dollar");
+            if (msg.IsPaid)
+            {
+                var acceptResp = msg.Offer.Accept();
+                if (acceptResp.Accepted)
                 {
-                    return _consoleInput;
+                    SteamFriends.SendChatMessage(msg.Offer.PartnerSteamId, EChatEntryType.ChatMsg, $"Trade Token = {msg.Token}, Price = {msg.Price} -------> Payment Successful");
+                    if (AcceptAllMobileTradeConfirmations())
+                    {
+                        Log.Info("Accepted trade offer successfully : Trade ID: " + acceptResp.TradeId);
+                    }
+                    else
+                    {
+                        GetUserHandler(msg.Offer.PartnerSteamId).OnAutoTradeConfirmationFail(msg.Offer);
+                        Log.Info($"Waiting Manual Trade Confirmation On TradeOffer {msg.Token}");
+                    }
+
                 }
-                Thread.Sleep(5);
+                else
+                {
+                    Log.Warn("Trade Accept Attempt Fails, Error: " + acceptResp.TradeError);
+                }
             }
         }
-
         bool HandleTradeSessionStart(SteamID other)
         {
             if (CurrentTrade != null)
@@ -524,8 +499,7 @@ namespace TreasureHunter.Service
                 {
                     while (loginResult == SteamAuth.LoginResult.NeedEmail)
                     {
-                        Log.Info("Enter Steam Guard code from email (type \"input [index] [code]\"):");
-                        var emailCode = WaitForInput();
+                        var emailCode = WaitForInput("Enter Steam Guard code from email (type \"input [index] [code]\"):");
                         login.EmailCode = emailCode;
                         loginResult = login.DoLogin();
                     }
@@ -539,8 +513,7 @@ namespace TreasureHunter.Service
                     {
                         while (addAuthResult == SteamAuth.AuthenticatorLinker.LinkResult.MustProvidePhoneNumber)
                         {
-                            Log.Info("Enter phone number with country code, e.g. +1XXXXXXXXXXX (type \"input [index] [number]\"):");
-                            var phoneNumber = WaitForInput();
+                            var phoneNumber = WaitForInput("Enter phone number with country code, e.g. +1XXXXXXXXXXX (type \"input [index] [number]\"):");
                             authLinker.PhoneNumber = phoneNumber;
                             addAuthResult = authLinker.AddAuthenticator();
                         }
@@ -550,11 +523,10 @@ namespace TreasureHunter.Service
                         SteamGuardAccount = authLinker.LinkedAccount;
                         try
                         {
-                            var authFile = Path.Combine("authfiles", String.Format("{0}.auth", _logOnDetails.Username));
+                            var authFile = Path.Combine("authfiles", $"{_logOnDetails.Username}.auth");
                             Directory.CreateDirectory(Path.Combine(System.Windows.Forms.Application.StartupPath, "authfiles"));
                             File.WriteAllText(authFile, Newtonsoft.Json.JsonConvert.SerializeObject(SteamGuardAccount));
-                            Log.Info("Enter SMS code (type \"input [index] [code]\"):");
-                            var smsCode = WaitForInput();
+                            var smsCode = WaitForInput("Enter SMS code (type \"input [index] [code]\"):");
                             var authResult = authLinker.FinalizeAddAuthenticator(smsCode);
                             if (authResult == SteamAuth.AuthenticatorLinker.FinalizeResult.Success)
                             {
@@ -625,7 +597,6 @@ namespace TreasureHunter.Service
             _tradeOfferManager = new TradeOfferManager(ApiKey, SteamWeb);
             SubscribeTradeOffer(_tradeOfferManager);
             _cookiesAreInvalid = false;
-
             // Success, check trade offers which we have received while we were offline
             SpawnTradeOfferPollingThread();
         }
@@ -912,10 +883,31 @@ namespace TreasureHunter.Service
             public TradeOfferEscrowDurationParseException(string message) : base(message) { }
         }
 
+
+
+        #endregion
         /// <summary>
-        /// Threads to do polling
+        /// Methods regardig background threads
         /// </summary>
+
         #region Background/Polling Worker Methods
+        private readonly ConcurrentQueue<string> _threadCommunicator;
+        private readonly BackgroundWorker _botThread;
+
+
+        public string WaitForInput(string message)
+        {
+            string input;
+            _commandActor.Tell(new ActorCommandMessage()
+            {
+                Text = message
+            });
+            while (_threadCommunicator.TryDequeue(out input))
+            {
+                
+            }
+            return input;
+        }
         protected void SpawnTradeOfferPollingThread()
         {
             if (_tradeOfferThread == null)
@@ -1061,20 +1053,6 @@ namespace TreasureHunter.Service
 
         #endregion
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing)
-        {
-            if (_disposed)
-                return;
-            StopBot();
-            _disposed = true;
-        }
-
         private void SubscribeSteamCallbacks()
         {
             #region Login
@@ -1111,9 +1089,9 @@ namespace TreasureHunter.Service
                 {
                     var mobileAuthCode = GetMobileAuthCode();
                     if (string.IsNullOrEmpty(mobileAuthCode))
-                    {
-                        Log.Info("Please enter two-way auth code for BotName: " + this.DisplayName);                       
-                        mobileAuthCode = WaitForInput();
+                    {                 
+                        var reply = WaitForInput("Please enter two-way auth code for BotName: " + this.DisplayName);
+                        mobileAuthCode = reply;
                     }
                     if (string.IsNullOrEmpty(mobileAuthCode))
                     {
@@ -1131,9 +1109,9 @@ namespace TreasureHunter.Service
                     _logOnDetails.TwoFactorCode = SteamGuardAccount?.GenerateSteamGuardCode();
                     Log.Info("Regenerated 2FA code.");
                     if (string.IsNullOrEmpty(_logOnDetails.TwoFactorCode))
-                    {
-                        Log.Info("Please enter two-way auth code for BotName: " + this.DisplayName);
-                        _logOnDetails.TwoFactorCode = WaitForInput();
+                    {                       
+                        var reply = WaitForInput("Please enter two-way auth code for BotName: " + this.DisplayName);
+                        _logOnDetails.TwoFactorCode = reply;
                     }
                 }
                 else if (callback.Result == EResult.AccountLogonDenied)

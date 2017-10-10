@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
-namespace SteamTrade.TradeWebAPI
+namespace TreasureHunter.SteamTrade.TradeWebAPI
 {
     public class TradeStatus
     {

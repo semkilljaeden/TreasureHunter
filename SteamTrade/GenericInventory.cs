@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using SteamKit2;
-using SteamTrade.TradeWebAPI;
+using TreasureHunter.SteamTrade.TradeWebAPI;
 
-namespace SteamTrade
+namespace TreasureHunter.SteamTrade
 {
 
     /// <summary>

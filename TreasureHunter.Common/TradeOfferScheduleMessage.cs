@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SteamTrade.TradeOffer
-{ 
-    class ScheduleMessage
+namespace TreasureHunter.Common
+{
+    public class TradeOfferScheduleMessage
     {
     }
 }

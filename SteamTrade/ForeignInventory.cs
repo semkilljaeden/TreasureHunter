@@ -1,7 +1,6 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 
-namespace SteamTrade
+namespace TreasureHunter.SteamTrade
 {
     /// <summary>
     /// This represents an inventory as decoded from the Steam Trade API 

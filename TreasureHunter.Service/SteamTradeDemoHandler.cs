@@ -1,8 +1,9 @@
 using SteamKit2;
 using System.Collections.Generic;
-using SteamTrade;
-using SteamTrade.TradeOffer;
+using TreasureHunter.SteamTrade;
 using System;
+using TreasureHunter.SteamTrade;
+using TreasureHunter.SteamTrade.TradeOffer;
 
 namespace TreasureHunter.Service
 {

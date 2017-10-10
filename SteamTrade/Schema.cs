@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
-using System.Net;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Web.Script.Serialization;
 using log4net;
 using SourceSchemaParser.Utilities;
+using TreasureHunter.SteamTrade;
 
-namespace SteamTrade
+namespace TreasureHunter.SteamTrade
 {
     /// <summary>
     /// This class represents the Dota2 Item schema as deserialized from its

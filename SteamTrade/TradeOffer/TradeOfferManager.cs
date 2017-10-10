@@ -1,13 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using SteamKit2;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
+using SteamKit2;
+using TreasureHunter.SteamTrade;
 
-namespace SteamTrade.TradeOffer
+namespace TreasureHunter.SteamTrade.TradeOffer
 {
     public class TradeOfferManager
     {
@@ -15,23 +14,20 @@ namespace SteamTrade.TradeOffer
         private readonly OfferSession _session;
         private readonly TradeOfferWebAPI _webApi;
         private readonly ConcurrentQueue<Offer> _unhandledTradeOfferUpdates;
-        private readonly string LastTimeCheckCache = "cache/persistence";
         private readonly string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
         public DateTime LastTimeCheckedOffers { get; private set; }
 
-        public TradeOfferManager(string apiKey, SteamWeb steamWeb)
+        public TradeOfferManager(string apiKey, SteamWeb steamWeb, DateTime lastTimeCheckedOffers)
         {
             if (apiKey == null)
                 throw new ArgumentNullException(nameof(apiKey));
-            var time = System.IO.File.Exists(LastTimeCheckCache)? System.IO.File.ReadAllText(LastTimeCheckCache) : null;
-
-            LastTimeCheckedOffers = string.IsNullOrEmpty(time) ? DateTime.MinValue : DateTime.ParseExact(time, DateTimeFormat, CultureInfo.InvariantCulture);
+            LastTimeCheckedOffers = lastTimeCheckedOffers;
             _webApi = new TradeOfferWebAPI(apiKey, steamWeb);
             _session = new OfferSession(_webApi, steamWeb);
             _unhandledTradeOfferUpdates = new ConcurrentQueue<Offer>();
         }
 
-        public delegate void TradeOfferUpdatedHandler(TradeOffer offer);
+        public delegate void TradeOfferUpdatedHandler(TreasureHunter.SteamTrade.TradeOffer.TradeOffer offer);
 
         /// <summary>
         /// Occurs when a new trade offer has been made by the other user
@@ -48,7 +44,6 @@ namespace SteamTrade.TradeOffer
             AddTradeOffersToQueue(offersResponse);
 
             LastTimeCheckedOffers = startTime - TimeSpan.FromMinutes(5); //Lazy way to make sure we don't miss any trade offers due to slightly differing clocks
-            System.IO.File.WriteAllText(LastTimeCheckCache, LastTimeCheckedOffers.ToString(DateTimeFormat));
         }
 
         private void AddTradeOffersToQueue(OffersResponse offers)
@@ -107,7 +102,7 @@ namespace SteamTrade.TradeOffer
         private void SendOfferToHandler(Offer offer)
         {
             _knownTradeOffers[offer.TradeOfferId] = offer.TradeOfferState;
-            OnTradeOfferUpdated(new TradeOffer(_session, offer));
+            OnTradeOfferUpdated(new TreasureHunter.SteamTrade.TradeOffer.TradeOffer(_session, offer));
         }
 
         private uint GetUnixTimeStamp(DateTime dateTime)
@@ -129,7 +124,7 @@ namespace SteamTrade.TradeOffer
             {
                 if (IsOfferValid(resp.Offer))
                 {
-                    tradeOffer = new TradeOffer(_session, resp.Offer);
+                    tradeOffer = new TreasureHunter.SteamTrade.TradeOffer.TradeOffer(_session, resp.Offer);
                     return true;
                 }
                 else

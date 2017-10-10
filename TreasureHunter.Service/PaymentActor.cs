@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Akka.Actor;
 using log4net;
-using SteamTrade.TradeOffer;
 using TreasureHunter.Common;
 
 namespace TreasureHunter.Service
@@ -26,14 +25,14 @@ namespace TreasureHunter.Service
         {
             _offerDictionary = new Dictionary<string, Tuple<IActorRef, PaymentMessage>>();
             Receive<PaymentMessage>(msg => Enqueue(msg));
-            Receive<Message>(msg => RunCommand(msg));
+            Receive<CommandMessage>(msg => RunCommand(msg));
         }
 
-        private void RunCommand(Message msg)
+        private void RunCommand(CommandMessage msg)
         {
             switch (msg.Type)
             {
-                    case Message.MessageType.ReleaseItem:
+                    case CommandMessage.MessageType.ReleaseItem:
                         Tuple<IActorRef, PaymentMessage> tuple;
                         if (_offerDictionary.TryGetValue(msg.MessageText, out tuple))
                         {

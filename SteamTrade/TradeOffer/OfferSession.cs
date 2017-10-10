@@ -1,17 +1,16 @@
-using Newtonsoft.Json;
-using SteamKit2;
 using System;
 using System.Collections.Specialized;
 using System.Diagnostics;
-using System.IO;
-using System.Net;
+using Newtonsoft.Json;
+using SteamKit2;
+using TreasureHunter.SteamTrade;
 
-namespace SteamTrade.TradeOffer
+namespace TreasureHunter.SteamTrade.TradeOffer
 {
     public class OfferSession
     {
-        private readonly TradeOfferWebAPI webApi;
-        private readonly SteamWeb steamWeb;
+        private readonly TradeOfferWebAPI _webApi;
+        private readonly SteamWeb _steamWeb;
 
         internal JsonSerializerSettings JsonSerializerSettings { get; set; }
 
@@ -19,8 +18,8 @@ namespace SteamTrade.TradeOffer
 
         public OfferSession(TradeOfferWebAPI webApi, SteamWeb steamWeb)
         {
-            this.webApi = webApi;
-            this.steamWeb = steamWeb;
+            this._webApi = webApi;
+            this._steamWeb = steamWeb;
 
             JsonSerializerSettings = new JsonSerializerSettings();
             JsonSerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
@@ -30,14 +29,14 @@ namespace SteamTrade.TradeOffer
         public TradeOfferAcceptResponse Accept(string tradeOfferId)
         {            
             var data = new NameValueCollection();
-            data.Add("sessionid", steamWeb.SessionId);
+            data.Add("sessionid", _steamWeb.SessionId);
             data.Add("serverid", "1");
             data.Add("tradeofferid", tradeOfferId);
 
             string url = string.Format("https://steamcommunity.com/tradeoffer/{0}/accept", tradeOfferId);
             string referer = string.Format("https://steamcommunity.com/tradeoffer/{0}/", tradeOfferId);
             
-            string resp = steamWeb.Fetch(url, "POST", data, false, referer, true);
+            string resp = _steamWeb.Fetch(url, "POST", data, false, referer, true);
 
             if (!String.IsNullOrEmpty(resp))
             {
@@ -56,14 +55,14 @@ namespace SteamTrade.TradeOffer
                 }
             }
             //if it didn't work as expected, check the state, maybe it was accepted after all
-            var state = webApi.GetOfferState(tradeOfferId);            
+            var state = _webApi.GetOfferState(tradeOfferId);            
             return new TradeOfferAcceptResponse { Accepted = state == TradeOfferState.TradeOfferStateAccepted };            
         }
 
         public bool Decline(string tradeOfferId)
         {
             var data = new NameValueCollection();
-            data.Add("sessionid", steamWeb.SessionId);
+            data.Add("sessionid", _steamWeb.SessionId);
             data.Add("serverid", "1");
             data.Add("tradeofferid", tradeOfferId);
 
@@ -71,7 +70,7 @@ namespace SteamTrade.TradeOffer
             //should be http://steamcommunity.com/{0}/{1}/tradeoffers - id/profile persona/id64 ideally
             string referer = string.Format("https://steamcommunity.com/tradeoffer/{0}/", tradeOfferId);
 
-            var resp = steamWeb.Fetch(url, "POST", data, false, referer);
+            var resp = _steamWeb.Fetch(url, "POST", data, false, referer);
 
             if (!String.IsNullOrEmpty(resp))
             {
@@ -90,7 +89,7 @@ namespace SteamTrade.TradeOffer
             }
             else
             {
-                var state = webApi.GetOfferState(tradeOfferId);
+                var state = _webApi.GetOfferState(tradeOfferId);
                 if (state == TradeOfferState.TradeOfferStateDeclined)
                 {
                     return true;
@@ -102,14 +101,14 @@ namespace SteamTrade.TradeOffer
         public bool Cancel(string tradeOfferId)
         {
             var data = new NameValueCollection();
-            data.Add("sessionid", steamWeb.SessionId);
+            data.Add("sessionid", _steamWeb.SessionId);
             data.Add("tradeofferid", tradeOfferId);
             data.Add("serverid", "1");
             string url = string.Format("https://steamcommunity.com/tradeoffer/{0}/cancel", tradeOfferId);
             //should be http://steamcommunity.com/{0}/{1}/tradeoffers/sent/ - id/profile persona/id64 ideally
             string referer = string.Format("https://steamcommunity.com/tradeoffer/{0}/", tradeOfferId);
 
-            var resp = steamWeb.Fetch(url, "POST", data, false, referer);
+            var resp = _steamWeb.Fetch(url, "POST", data, false, referer);
 
             if (!String.IsNullOrEmpty(resp))
             {
@@ -128,7 +127,7 @@ namespace SteamTrade.TradeOffer
             }
             else
             {
-                var state = webApi.GetOfferState(tradeOfferId);
+                var state = _webApi.GetOfferState(tradeOfferId);
                 if (state == TradeOfferState.TradeOfferStateCanceled)
                 {
                     return true;
@@ -146,7 +145,7 @@ namespace SteamTrade.TradeOffer
         /// <param name="newTradeOfferId">The trade offer Id that will be created if successful</param>
         /// <param name="tradeOfferId">The trade offer Id of the offer being countered</param>
         /// <returns></returns>
-        public bool CounterOffer(string message, SteamID otherSteamId, TradeOffer.TradeStatus status, out string newTradeOfferId, string tradeOfferId)
+        public bool CounterOffer(string message, SteamID otherSteamId, global::TreasureHunter.SteamTrade.TradeOffer.TradeOffer.TradeStatus status, out string newTradeOfferId, string tradeOfferId)
         {
             if (String.IsNullOrEmpty(tradeOfferId))
             {
@@ -154,7 +153,7 @@ namespace SteamTrade.TradeOffer
             }
 
             var data = new NameValueCollection();
-            data.Add("sessionid", steamWeb.SessionId);
+            data.Add("sessionid", _steamWeb.SessionId);
             data.Add("serverid", "1");
             data.Add("partner", otherSteamId.ConvertToUInt64().ToString());
             data.Add("tradeoffermessage", message);
@@ -166,7 +165,7 @@ namespace SteamTrade.TradeOffer
 
             if (!Request(SendUrl, data, referer, tradeOfferId, out newTradeOfferId))
             {
-                var state = webApi.GetOfferState(tradeOfferId);
+                var state = _webApi.GetOfferState(tradeOfferId);
                 if (state == TradeOfferState.TradeOfferStateCountered)
                 {
                     return true;
@@ -184,10 +183,10 @@ namespace SteamTrade.TradeOffer
         /// <param name="status">The list of items we and they are going to trade</param>
         /// <param name="newTradeOfferId">The trade offer Id that will be created if successful</param>
         /// <returns>True if successfully returns a newTradeOfferId, else false</returns>
-        public bool SendTradeOffer(string message, SteamID otherSteamId, TradeOffer.TradeStatus status, out string newTradeOfferId)
+        public bool SendTradeOffer(string message, SteamID otherSteamId, global::TreasureHunter.SteamTrade.TradeOffer.TradeOffer.TradeStatus status, out string newTradeOfferId)
         {
             var data = new NameValueCollection();
-            data.Add("sessionid", steamWeb.SessionId);
+            data.Add("sessionid", _steamWeb.SessionId);
             data.Add("serverid", "1");
             data.Add("partner", otherSteamId.ConvertToUInt64().ToString());
             data.Add("tradeoffermessage", message);
@@ -209,7 +208,7 @@ namespace SteamTrade.TradeOffer
         /// <param name="token">The token of the partner we are trading with</param>
         /// <param name="newTradeOfferId">The trade offer Id that will be created if successful</param>
         /// <returns>True if successfully returns a newTradeOfferId, else false</returns>
-        public bool SendTradeOfferWithToken(string message, SteamID otherSteamId, TradeOffer.TradeStatus status,
+        public bool SendTradeOfferWithToken(string message, SteamID otherSteamId, global::TreasureHunter.SteamTrade.TradeOffer.TradeOffer.TradeStatus status,
             string token, out string newTradeOfferId)
         {
             if (String.IsNullOrEmpty(token))
@@ -219,7 +218,7 @@ namespace SteamTrade.TradeOffer
             var offerToken = new OfferAccessToken() { TradeOfferAccessToken = token };
 
             var data = new NameValueCollection();
-            data.Add("sessionid", steamWeb.SessionId);
+            data.Add("sessionid", _steamWeb.SessionId);
             data.Add("serverid", "1");
             data.Add("partner", otherSteamId.ConvertToUInt64().ToString());
             data.Add("tradeoffermessage", message);
@@ -235,7 +234,7 @@ namespace SteamTrade.TradeOffer
         {
             newTradeOfferId = "";
 
-            string resp = steamWeb.Fetch(url, "POST", data, false, referer);
+            string resp = _steamWeb.Fetch(url, "POST", data, false, referer);
             if (!String.IsNullOrEmpty(resp))
             {
                 try

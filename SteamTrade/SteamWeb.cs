@@ -1,19 +1,19 @@
 using System;
-using System.IO;
 using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Net;
 using System.Net.Cache;
-using System.Text;
-using System.Web;
-using System.Security.Cryptography;
-using Newtonsoft.Json;
-using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
-using SteamKit2;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
+using System.Web;
+using Newtonsoft.Json;
+using SteamKit2;
 
-namespace SteamTrade
+namespace TreasureHunter.SteamTrade
 {
 
     /// <summary>

@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using log4net;
 using SteamKit2;
-using SteamTrade;
-using SteamTrade.TradeOffer;
+using TreasureHunter.SteamTrade;
+using TreasureHunter.SteamTrade;
+using TreasureHunter.SteamTrade.TradeOffer;
 
 namespace TreasureHunter.Service
 {

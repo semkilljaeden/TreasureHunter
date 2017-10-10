@@ -1,20 +1,21 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Newtonsoft.Json;
+using TreasureHunter.SteamTrade;
 
-namespace SteamTrade.TradeOffer
+namespace TreasureHunter.SteamTrade.TradeOffer
 {
     public class TradeOfferWebAPI
     {
-        private readonly SteamWeb steamWeb;
-        private readonly string apiKey;
+        private readonly SteamWeb _steamWeb;
+        private readonly string _apiKey;
 
         public TradeOfferWebAPI(string apiKey, SteamWeb steamWeb)
         {
-            this.steamWeb = steamWeb;
-            this.apiKey = apiKey;
+            this._steamWeb = steamWeb;
+            this._apiKey = apiKey;
 
             if (apiKey == null)
             {
@@ -26,11 +27,11 @@ namespace SteamTrade.TradeOffer
 
         public OfferResponse GetTradeOffer(string tradeofferid)
         {
-            string options = string.Format("?key={0}&tradeofferid={1}&language={2}", apiKey, tradeofferid, "en_us");
+            string options = string.Format("?key={0}&tradeofferid={1}&language={2}", _apiKey, tradeofferid, "en_us");
             string url = String.Format(BaseUrl, "GetTradeOffer", "v1", options);
             try
             {
-                string response = steamWeb.Fetch(url, "GET", null, false);
+                string response = _steamWeb.Fetch(url, "GET", null, false);
                 var result = JsonConvert.DeserializeObject<ApiResponse<OfferResponse>>(response);
                 return result.Response;
             }
@@ -70,9 +71,9 @@ namespace SteamTrade.TradeOffer
             }
 
             string options = string.Format("?key={0}&get_sent_offers={1}&get_received_offers={2}&get_descriptions={3}&language={4}&active_only={5}&historical_only={6}&time_historical_cutoff={7}",
-                apiKey, BoolConverter(getSentOffers), BoolConverter(getReceivedOffers), BoolConverter(getDescriptions), language, BoolConverter(activeOnly), BoolConverter(historicalOnly), timeHistoricalCutoff);
+                _apiKey, BoolConverter(getSentOffers), BoolConverter(getReceivedOffers), BoolConverter(getDescriptions), language, BoolConverter(activeOnly), BoolConverter(historicalOnly), timeHistoricalCutoff);
             string url = String.Format(BaseUrl, "GetTradeOffers", "v1", options);
-            string response = steamWeb.Fetch(url, "GET", null, false);
+            string response = _steamWeb.Fetch(url, "GET", null, false);
             try
             {
                 var result = JsonConvert.DeserializeObject<ApiResponse<OffersResponse>>(response);
@@ -93,12 +94,12 @@ namespace SteamTrade.TradeOffer
 
         public TradeOffersSummary GetTradeOffersSummary(UInt32 timeLastVisit)
         {
-            string options = string.Format("?key={0}&time_last_visit={1}", apiKey, timeLastVisit);
+            string options = string.Format("?key={0}&time_last_visit={1}", _apiKey, timeLastVisit);
             string url = String.Format(BaseUrl, "GetTradeOffersSummary", "v1", options);
 
             try
             {
-                string response = steamWeb.Fetch(url, "GET", null, false);
+                string response = _steamWeb.Fetch(url, "GET", null, false);
                 var resp = JsonConvert.DeserializeObject<ApiResponse<TradeOffersSummary>>(response);
 
                 return resp.Response;
@@ -113,10 +114,10 @@ namespace SteamTrade.TradeOffer
 
         private bool DeclineTradeOffer(ulong tradeofferid)
         {
-            string options = string.Format("?key={0}&tradeofferid={1}", apiKey, tradeofferid);
+            string options = string.Format("?key={0}&tradeofferid={1}", _apiKey, tradeofferid);
             string url = String.Format(BaseUrl, "DeclineTradeOffer", "v1", options);
             Debug.WriteLine(url);
-            string response = steamWeb.Fetch(url, "POST", null, false);
+            string response = _steamWeb.Fetch(url, "POST", null, false);
             dynamic json = JsonConvert.DeserializeObject(response);
 
             if (json == null || json.success != "1")
@@ -128,10 +129,10 @@ namespace SteamTrade.TradeOffer
 
         private bool CancelTradeOffer(ulong tradeofferid)
         {
-            string options = string.Format("?key={0}&tradeofferid={1}", apiKey, tradeofferid);
+            string options = string.Format("?key={0}&tradeofferid={1}", _apiKey, tradeofferid);
             string url = String.Format(BaseUrl, "CancelTradeOffer", "v1", options);
             Debug.WriteLine(url);
-            string response = steamWeb.Fetch(url, "POST", null, false);
+            string response = _steamWeb.Fetch(url, "POST", null, false);
             dynamic json = JsonConvert.DeserializeObject(response);
 
             if (json == null || json.success != "1")

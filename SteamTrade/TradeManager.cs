@@ -2,10 +2,11 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using log4net;
 using SteamKit2;
-using SteamTrade.Exceptions;
+using TreasureHunter.SteamTrade.Exceptions;
 
-namespace SteamTrade
+namespace TreasureHunter.SteamTrade
 {
     public class TradeManager
     {
@@ -19,7 +20,7 @@ namespace SteamTrade
         private DateTime _lastTimeoutMessage;
         private Task<Inventory> _myInventoryTask;
         private Task<Inventory> _otherInventoryTask;
-
+        private readonly ILog Log = LogManager.GetLogger(typeof(TradeManager));
         /// <summary>
         /// Initializes a new instance of the <see cref="SteamTrade.TradeManager"/> class.
         /// </summary>
@@ -254,7 +255,7 @@ namespace SteamTrade
             {
                 IsTradeThreadRunning = true;
 
-                DebugPrint ("Trade thread starting.");
+                Log.Debug("Trade thread starting.");
                 
                 // main thread loop for polling
                 try
@@ -283,12 +284,12 @@ namespace SteamTrade
 
                     // ok then we should stop polling...
                     IsTradeThreadRunning = false;
-                    DebugPrint("[TRADEMANAGER] general error caught: " + ex);
+                    Log.Debug("[TRADEMANAGER] general error caught: " + ex);
                     trade.FireOnErrorEvent("Unknown error occurred: " + ex.ToString());
                 }
                 finally
                 {
-                    DebugPrint("Trade thread shutting down.");
+                    Log.Debug("Trade thread shutting down.");
                     try //Yikes, that's a lot of nested 'try's.  Is there some way to clean this up?
                     {
                         if(trade.IsTradeAwaitingConfirmation)
@@ -329,7 +330,7 @@ namespace SteamTrade
             DateTime actionTimeout = _lastOtherActionTime.AddSeconds (MaxActionGapSec);
             int untilActionTimeout = (int)Math.Round ((actionTimeout - now).TotalSeconds);
 
-            DebugPrint (String.Format ("{0} {1}", actionTimeout, untilActionTimeout));
+            Log.Debug(String.Format ("{0} {1}", actionTimeout, untilActionTimeout));
 
             DateTime tradeTimeout = _tradeStartTime.AddSeconds (MaxTradeTimeSec);
             int untilTradeTimeout = (int)Math.Round ((tradeTimeout - now).TotalSeconds);
@@ -338,7 +339,7 @@ namespace SteamTrade
 
             if (untilActionTimeout <= 0 || untilTradeTimeout <= 0)
             {
-                DebugPrint ("timed out...");
+                Log.Debug("timed out...");
 
                 if (OnTimeout != null)
                 {
@@ -359,16 +360,6 @@ namespace SteamTrade
                 _lastTimeoutMessage = now;
             }
             return false;
-        }
-
-        [Conditional ("DEBUG_TRADE_MANAGER")]
-        private static void DebugPrint (string output)
-        {
-            // I don't really want to add the Logger as a dependecy to TradeManager so I 
-            // print using the console directly. To enable this for debugging put this:
-            // #define DEBUG_TRADE_MANAGER
-            // at the first line of this file.
-            System.Console.WriteLine (output);
         }
 
         private static void DebugError(string output)
