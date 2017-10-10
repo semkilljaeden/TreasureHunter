@@ -2,6 +2,7 @@ using SteamKit2;
 using System.Collections.Generic;
 using SteamTrade;
 using SteamTrade.TradeOffer;
+using System;
 
 namespace TreasureHunter.Service
 {
@@ -203,7 +204,11 @@ namespace TreasureHunter.Service
             
             return errors.Count == 0;
         }
-        
+
+        public override bool OnAutoTradeConfirmationFail(TradeOffer offer)
+        {
+            throw new NotImplementedException();
+        }
     }
  
 }

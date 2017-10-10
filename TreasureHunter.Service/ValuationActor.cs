@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Akka.Actor;
+using log4net;
 using SteamTrade.TradeOffer;
 using TreasureHunter.Common;
 
@@ -11,6 +12,10 @@ namespace TreasureHunter.Service
 {
     class ValuationActor : ReceiveActor
     {
+        /// <summary>
+        /// The instance of the Logger for the bot.
+        /// </summary>
+        public static readonly ILog Log = LogManager.GetLogger(typeof(ValuationActor));
         private Dictionary<string, TradeOffer> _offerDictionary;
         public static Props Props()
         {

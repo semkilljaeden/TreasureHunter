@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Globalization;
 
 namespace SteamTrade.TradeOffer
 {
@@ -13,16 +14,18 @@ namespace SteamTrade.TradeOffer
         private readonly Dictionary<string, TradeOfferState> _knownTradeOffers = new Dictionary<string, TradeOfferState>();
         private readonly OfferSession _session;
         private readonly TradeOfferWebAPI _webApi;
-        private readonly ConcurrentQueue<Offer> _unhandledTradeOfferUpdates; 
-
+        private readonly ConcurrentQueue<Offer> _unhandledTradeOfferUpdates;
+        private readonly string LastTimeCheckCache = "cache/persistence";
+        private readonly string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
         public DateTime LastTimeCheckedOffers { get; private set; }
 
         public TradeOfferManager(string apiKey, SteamWeb steamWeb)
         {
             if (apiKey == null)
                 throw new ArgumentNullException(nameof(apiKey));
+            var time = System.IO.File.Exists(LastTimeCheckCache)? System.IO.File.ReadAllText(LastTimeCheckCache) : null;
 
-            LastTimeCheckedOffers = DateTime.MinValue;
+            LastTimeCheckedOffers = string.IsNullOrEmpty(time) ? DateTime.MinValue : DateTime.ParseExact(time, DateTimeFormat, CultureInfo.InvariantCulture);
             _webApi = new TradeOfferWebAPI(apiKey, steamWeb);
             _session = new OfferSession(_webApi, steamWeb);
             _unhandledTradeOfferUpdates = new ConcurrentQueue<Offer>();
@@ -45,6 +48,7 @@ namespace SteamTrade.TradeOffer
             AddTradeOffersToQueue(offersResponse);
 
             LastTimeCheckedOffers = startTime - TimeSpan.FromMinutes(5); //Lazy way to make sure we don't miss any trade offers due to slightly differing clocks
+            System.IO.File.WriteAllText(LastTimeCheckCache, LastTimeCheckedOffers.ToString(DateTimeFormat));
         }
 
         private void AddTradeOffersToQueue(OffersResponse offers)

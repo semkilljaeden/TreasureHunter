@@ -21,13 +21,18 @@ namespace TreasureHunter.Service
             if (config == null)
             {
                 Log.Error("No config json, program exit");
+                return;
             }
             _system = ActorSystem.Create("TreasureHunter");
-            var paymentActor = _system.ActorOf(PaymentActor.Props());
-            var valuationActor = _system.ActorOf(ValuationActor.Props());
+            var paymentActor = _system.ActorOf(PaymentActor.Props(), "Payment");
+            var valuationActor = _system.ActorOf(ValuationActor.Props(), "Valuation");
             var routees = config.Bots.Select(bot => _system.ActorOf(BotActor.Props(bot, config.ApiKey, (x, y) => new CustomUserHandler(x, y), paymentActor, valuationActor), bot.DisplayName)).ToList();
             Schema.Init(config.ApiKey);
-            Commander commander = new Commander(routees);
+            var actors = new List<IActorRef>();
+            actors.AddRange(routees);
+            actors.Add(paymentActor);
+            actors.Add(valuationActor);
+            Commander commander = new Commander(actors);
             do
             {
                 Console.Write("botmgr > ");

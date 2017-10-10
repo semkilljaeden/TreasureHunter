@@ -25,6 +25,7 @@ namespace TreasureHunter.Service
 
         private readonly IActorRef _paymentActor;
         private readonly IActorRef _valuationActor;
+        private IActorRef _mySelf;
         public BotActor(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor) :
             this(info, apiKey, creator, false, false)
         {
@@ -40,6 +41,7 @@ namespace TreasureHunter.Service
             {
                 case Message.MessageType.Start:
                     StartBot();
+                    _mySelf = Self;
                     break;
                 case Message.MessageType.Exec:
                     HandleBotCommand(message.MessageText);
@@ -61,7 +63,7 @@ namespace TreasureHunter.Service
                 Offer = offer,
                 Token = token,
                 Price = price
-            });
+            }, _mySelf);
         }
 
         public double Valuate(List<Schema.Item> myItems, List<Schema.Item> theirItems)
@@ -78,13 +80,25 @@ namespace TreasureHunter.Service
             double paid = msg.PaidAmmount;
             SteamFriends.SendChatMessage(msg.Offer.PartnerSteamId, EChatEntryType.ChatMsg, $"Trade Token = {msg.Token}, Price = {msg.Price} -------> receive ${paid} in Singapore Dollar");
             if (msg.IsPaid)
-            {
-                SteamFriends.SendChatMessage(msg.Offer.PartnerSteamId, EChatEntryType.ChatMsg, $"Trade Token = {msg.Token}, Price = {msg.Price} -------> Payment Successful");
+            {                
                 var acceptResp = msg.Offer.Accept();
                 if (acceptResp.Accepted)
                 {
-                    AcceptAllMobileTradeConfirmations();
-                    Log.Info("Accepted trade offer successfully : Trade ID: " + acceptResp.TradeId);
+                    SteamFriends.SendChatMessage(msg.Offer.PartnerSteamId, EChatEntryType.ChatMsg, $"Trade Token = {msg.Token}, Price = {msg.Price} -------> Payment Successful");
+                    if (AcceptAllMobileTradeConfirmations())
+                    {
+                        Log.Info("Accepted trade offer successfully : Trade ID: " + acceptResp.TradeId);
+                    }
+                    else
+                    {
+                        GetUserHandler(msg.Offer.PartnerSteamId).OnAutoTradeConfirmationFail(msg.Offer);
+                        Log.Info($"Waiting Manual Trade Confirmation On TradeOffer {msg.Token}");
+                    }
+                    
+                }
+                else
+                {
+                    Log.Warn("Trade Accept Attempt Fails, Error: " + acceptResp.TradeError);
                 }
             }
         }
@@ -783,11 +797,12 @@ namespace TreasureHunter.Service
             return inventory;
         }
 
-        public void AcceptAllMobileTradeConfirmations()
+        public bool AcceptAllMobileTradeConfirmations()
         {
             if (SteamGuardAccount == null)
             {
                 Log.Warn("Bot account does not have 2FA enabled.");
+                return false;
             }
             else
             {
@@ -802,11 +817,13 @@ namespace TreasureHunter.Service
                             Log.Info($"Confirmed {confirmation.Description}. (Confirmation ID #{confirmation.ID})");
                         }
                     }
+                    return true;
                 }
                 catch (SteamAuth.SteamGuardAccount.WGTokenInvalidException)
                 {
                     Log.Error("Invalid session when trying to fetch trade confirmations.");
                 }
+                return false;
             }
         }
 

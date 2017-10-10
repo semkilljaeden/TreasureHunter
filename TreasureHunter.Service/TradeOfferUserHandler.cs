@@ -107,6 +107,11 @@ namespace TreasureHunter.Service
             }
         }
 
+        public override bool OnAutoTradeConfirmationFail(TradeOffer offer)
+        {
+            throw new NotImplementedException();
+        }
+
         public override bool OnGroupAdd() { return false; }
 
         public override bool OnFriendAdd() { return IsAdmin; }

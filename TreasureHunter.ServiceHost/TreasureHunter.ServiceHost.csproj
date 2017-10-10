@@ -69,7 +69,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="authfiles\787029245.auth" />
     <None Include="log.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="sentryfiles\787029245.sentryfile" />
+    <None Include="sentryfiles\znmiat.sentryfile" />
+    <None Include="settings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

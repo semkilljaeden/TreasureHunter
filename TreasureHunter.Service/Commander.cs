@@ -41,10 +41,29 @@ namespace TreasureHunter.Service
                 new BotManagerOption("input",
                     "input (X) (Y) where X = the username or index of the bot and Y = your input",
                     InputCommand),
+                new BotManagerOption("release",
+                    "input (X) (Y) where X = the username or index of the bot and Y = your input",
+                    ReleaseItem),
 
             };
         }
 
+        void ReleaseItem(string auth)
+        {
+            var actor = _routees.FirstOrDefault(r => r.Path.Name == "Payment");
+            if (actor == null)
+            {
+                Log.Error($"Cannot find Payment Service");
+                return;
+            }
+            actor?.Tell(new Message()
+            {
+                Type = Message.MessageType.ReleaseItem,
+                MessageText = auth
+            });
+            Log.Info($"Release Trade with Token {auth}");
+            
+        }
         void ShowHelp(string auth)
         {
             Console.WriteLine("");
