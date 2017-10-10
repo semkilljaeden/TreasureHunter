@@ -594,7 +594,8 @@ namespace TreasureHunter.Service
             _tradeManager = new TradeManager(ApiKey, SteamWeb);
             _tradeManager.SetTradeTimeLimits(MaximumTradeTime, MaximumActionGap, _tradePollingInterval);
             _tradeManager.OnTimeout += OnTradeTimeout;
-            _tradeOfferManager = new TradeOfferManager(ApiKey, SteamWeb);
+            //TODO
+            _tradeOfferManager = new TradeOfferManager(ApiKey, SteamWeb, DateTime.Today);
             SubscribeTradeOffer(_tradeOfferManager);
             _cookiesAreInvalid = false;
             // Success, check trade offers which we have received while we were offline

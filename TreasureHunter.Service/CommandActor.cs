@@ -41,35 +41,18 @@ namespace TreasureHunter.Service
                     "exec (X) (Y) where X = the username or index of the bot and Y = your custom command to execute",
                     ExecCommand),
                 new BotManagerOption("release",
-                    "input (X) (Y) where X = the username or index of the bot and Y = your input",
+                    "release (X) where X = trade token",
                     ReleaseItem),
+                new BotManagerOption("input",
+                    "input (X) (Y) where X = the username or index of the bot and Y = your input",
+                    InputCommand),
 
             };
         }
 
-        public void Init()
-        {
-            do
-            {
-                Console.Write("botmgr > ");
-                string inputText = Console.ReadLine();
-
-                if (!String.IsNullOrEmpty(inputText))
-                    commander.Tell(new UserCommandMessage()
-                    {
-                        Text = inputText
-                    });
-
-            } while (true);
-        }
         public void HandleActorCommand(string msg)
         {
             Log.Info(msg);
-            var reply = Console.ReadLine();
-            Sender.Tell(new ActorCommandMessage()
-            {
-                Reply = reply
-            });
         }
 
         public static Props Props(List<IActorRef> routees)
@@ -190,7 +173,38 @@ namespace TreasureHunter.Service
 
         }
 
+        private void InputCommand(string inpt)
+        {
+            inpt = inpt.Trim();
+            var cs = inpt.Split(' ');
+            try
+            {
 
+                if (cs.Length < 2)
+                {
+                    Log.Error("Error: No input given.");
+                    return;
+                }
+
+                // Take the rest of the input as is
+                var input = inpt.Remove(0, cs[0].Length + 1);
+
+
+                _routees.FirstOrDefault(r => r.Path.Name == cs[0])?.Tell(new CommandMessage()
+                {
+                    Type = CommandMessage.MessageType.Input,
+                    MessageText = input
+                });
+            }
+            catch (Exception e)
+            {
+                // Print error
+                Log.Error("Error: Bot " + cs[0] + " not found.");
+                throw;
+            }
+
+
+        }
         #endregion
 
 

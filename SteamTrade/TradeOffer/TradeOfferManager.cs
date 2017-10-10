@@ -14,7 +14,6 @@ namespace TreasureHunter.SteamTrade.TradeOffer
         private readonly OfferSession _session;
         private readonly TradeOfferWebAPI _webApi;
         private readonly ConcurrentQueue<Offer> _unhandledTradeOfferUpdates;
-        private readonly string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
         public DateTime LastTimeCheckedOffers { get; private set; }
 
         public TradeOfferManager(string apiKey, SteamWeb steamWeb, DateTime lastTimeCheckedOffers)
@@ -102,7 +101,11 @@ namespace TreasureHunter.SteamTrade.TradeOffer
         private void SendOfferToHandler(Offer offer)
         {
             _knownTradeOffers[offer.TradeOfferId] = offer.TradeOfferState;
-            OnTradeOfferUpdated(new TreasureHunter.SteamTrade.TradeOffer.TradeOffer(_session, offer));
+            if (OnTradeOfferUpdated == null)
+            {
+                throw new NullReferenceException(nameof(OnTradeOfferUpdated));
+            }
+            OnTradeOfferUpdated(new TradeOffer(_session, offer));
         }
 
         private uint GetUnixTimeStamp(DateTime dateTime)

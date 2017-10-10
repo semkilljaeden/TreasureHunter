@@ -31,11 +31,21 @@ namespace TreasureHunter.Service
             var valuationActor = _system.ActorOf(ValuationActor.Props(), "Valuation");
             var commander = _system.ActorOf(CommandActor.Props(actors), "Commander");
             var routees = config.Bots.Select(bot => _system.ActorOf(BotActor.Props(bot, config.ApiKey, (x, y) => new CustomUserHandler(x, y), paymentActor, valuationActor, commander), bot.DisplayName)).ToList();
-            Schema.Init(config.ApiKey);
             actors.AddRange(routees);
             actors.Add(paymentActor);
             actors.Add(valuationActor);
-            commander.Tell(new ScheduleMessage());
+            do
+            {
+                Console.Write("botmgr > ");
+                string inputText = Console.ReadLine();
+
+                if (!string.IsNullOrEmpty(inputText))
+                    commander.Tell(new UserCommandMessage()
+                    {
+                        Text = inputText
+                    });
+
+            } while (true);
         }
 
         private Configuration LoadConfig()
