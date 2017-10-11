@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TreasureHunter.DataAccess</RootNamespace>
     <AssemblyName>TreasureHunter.DataAccess</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -30,6 +31,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Akka, Version=1.3.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Akka.1.3.1\lib\net45\Akka.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Common.Logging, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
       <HintPath>..\packages\Common.Logging.3.3.1\lib\net40\Common.Logging.dll</HintPath>
       <Private>True</Private>
@@ -47,6 +52,10 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Collections.Immutable, Version=1.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Collections.Immutable.1.3.1\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net.Http.WebRequest" />
@@ -60,10 +69,31 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Accessor.cs" />
+    <Compile Include="Content.cs" />
+    <Compile Include="DataAccessActor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SteamTrade\TreasureHunter.SteamTrade.csproj">
+      <Project>{bda9a4a1-3b68-4f9e-be97-e2c11263b14b}</Project>
+      <Name>TreasureHunter.SteamTrade</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TreasureHunter.Account\TreasureHunter.Account.csproj">
+      <Project>{540260b7-82b8-498e-b5e5-69abe7a1bb1a}</Project>
+      <Name>TreasureHunter.Account</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TreasureHunter.Common\TreasureHunter.Common.csproj">
+      <Project>{591cf921-3027-4114-b062-2dadf4538f24}</Project>
+      <Name>TreasureHunter.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TreasureHunter.Service\TreasureHunter.Service.csproj">
+      <Project>{9ca83cfe-5702-4b97-ba53-98934ae3867a}</Project>
+      <Name>TreasureHunter.Service</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

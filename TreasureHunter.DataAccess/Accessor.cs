@@ -14,13 +14,7 @@ namespace TreasureHunter.DataAccess
     public class Accessor
     {
 
-        public void Init()
-        {
-            var section = ConfigurationManager.GetSection("couchbase");
-            ClusterHelper.Initialize(new ClientConfiguration((CouchbaseClientSection)section));
-            var bucket = ClusterHelper.GetBucket("beer-sample");
-            var result = bucket.Query<dynamic>("SELECT name FROM `beer-sample`");
-        }
+
         
     }
 }

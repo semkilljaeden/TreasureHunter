@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using log4net;
 using Newtonsoft.Json;
 using SteamKit2;
 
@@ -9,6 +10,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
 {
     public class TradeOffer
     {
+        private static readonly ILog Log = LogManager.GetLogger(typeof(TradeOffer));
         private OfferSession Session { get; set; }
 
         public SteamID PartnerSteamId { get; private set; }
@@ -109,7 +111,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
                 return Session.CounterOffer(message, PartnerSteamId, this.Items, out newTradeOfferId, TradeOfferId);
             }
             //todo: log
-            Debug.WriteLine("Can't counter offer a trade that doesn't have an offerid, is ours or isn't active");
+            Log.Warn("Can't counter offer a trade that doesn't have an offerid, is ours or isn't active");
             return false;
         }
 
@@ -127,7 +129,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
                 return Session.SendTradeOffer(message, PartnerSteamId, this.Items, out offerId);
             }
             //todo: log
-            Debug.WriteLine("Can't send a trade offer that already exists.");
+            Log.Warn("Can't send a trade offer that already exists.");
             return false;
         }
 
@@ -146,7 +148,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
                 return Session.SendTradeOfferWithToken(message, PartnerSteamId, this.Items, token, out offerId);
             }
             //todo: log
-            Debug.WriteLine("Can't send a trade offer that already exists.");
+            Log.Warn("Can't send a trade offer that already exists.");
             return false;
         }
 
@@ -202,7 +204,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
         {
             if (TradeOfferId == null)
             {
-                Debug.WriteLine("Can't decline a trade without a tradeofferid");
+                Log.Warn("Can't decline a trade without a tradeofferid");
                 throw new ArgumentException("TradeOfferId");
             }
             if (!IsOurOffer && OfferState == TradeOfferState.TradeOfferStateActive)
@@ -210,7 +212,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
                 return Session.Decline(TradeOfferId);
             }
             //todo: log wrong state
-            Debug.WriteLine("Can't decline a trade that is not active");
+            Log.Warn("Can't decline a trade that is not active");
             return false;
         }
 
@@ -222,7 +224,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
         {
             if (TradeOfferId == null)
             {
-                Debug.WriteLine("Can't cancel a trade without a tradeofferid");
+                Log.Warn("Can't cancel a trade without a tradeofferid");
                 throw new ArgumentException("TradeOfferId");
             }
             if (IsOurOffer && OfferState == TradeOfferState.TradeOfferStateActive)
@@ -230,7 +232,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
                 return Session.Cancel(TradeOfferId);
             }
             //todo: log wrong state
-            Debug.WriteLine("Can't cancel a trade that is not active and ours");
+            Log.Warn("Can't cancel a trade that is not active and ours");
             return false;
         }
 

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Configuration;
 
 namespace TreasureHunter.DataAccess.Tests
 {
@@ -14,7 +15,16 @@ namespace TreasureHunter.DataAccess.Tests
         [Test()]
         public void RunTest()
         {
-            new Accessor().Init();
+            try
+            {
+                var section = ConfigurationManager.GetSection("Couchbase");
+                new Accessor().Init();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 }
