@@ -36,7 +36,7 @@ namespace TreasureHunter.Service
             }
         }
 
-        public UserHandler (BotActor bot, SteamID sid)
+        protected UserHandler (BotActor bot, SteamID sid)
         {
             Bot = bot;
             OtherSID = sid;
