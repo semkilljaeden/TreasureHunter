@@ -1,7 +1,7 @@
 using System;
 using SteamKit2;
 
-namespace SteamTrade.Exceptions
+namespace TreasureHunter.SteamTrade.Exceptions
 {
     public class InventoryFetchException : TradeException
     {

@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
-using System.Net;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Web.Script.Serialization;
 using log4net;
 using SourceSchemaParser.Utilities;
+using TreasureHunter.SteamTrade;
 
-namespace SteamTrade
+namespace TreasureHunter.SteamTrade
 {
     /// <summary>
     /// This class represents the Dota2 Item schema as deserialized from its
@@ -21,7 +20,7 @@ namespace SteamTrade
         private static Schema _schema = null;
         private static readonly ILog Log = LogManager.GetLogger(typeof(Inventory));
         private const string SchemaApiUrlBase = "https://api.steampowered.com/IEconItems_570/GetSchemaURL/v0001/?key=";
-        private const string Cachefile = "dota2_schema.cache";
+        private const string Cachefile = "cache/dota2_schema.cache";
 
         public static Schema GetSchema()
         {
@@ -103,6 +102,7 @@ namespace SteamTrade
             {
                 _items = items
             };
+            System.IO.Directory.CreateDirectory(Path.GetDirectoryName(Cachefile)??"");
             File.WriteAllText(Cachefile, new JavaScriptSerializer { MaxJsonLength = 62914560 }.Serialize(schema.GetItems()));
             return schema;
         }
@@ -196,7 +196,7 @@ namespace SteamTrade
 
             public override string ToString()
             {
-                return "[" + Name + "]" + "=[$" + Price + "] " + Index;
+                return "[Name:  " + Name + "]" + "[Price:  $" + Price + "]" + "[Index:  " + Index + "]";
             }
         }
 

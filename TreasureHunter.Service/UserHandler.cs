@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using log4net;
 using SteamKit2;
-using SteamTrade;
-using SteamTrade.TradeOffer;
+using TreasureHunter.SteamTrade;
+using TreasureHunter.SteamTrade;
+using TreasureHunter.SteamTrade.TradeOffer;
 
 namespace TreasureHunter.Service
 {
@@ -102,7 +103,12 @@ namespace TreasureHunter.Service
         /// <c>true</c> if the other user is a configured admin; otherwise, <c>false</c>.
         /// </value>
         public bool IsAdmin => Bot.Admins.Contains(OtherSID);
-
+        /// <summary>
+        /// Called when the SteamAuth is deactivated During TradeOffer Confirmation
+        /// </summary>
+        /// <param name="offer"></param>
+        /// <returns></returns>
+        public abstract bool OnAutoTradeConfirmationFail(TradeOffer offer);
         /// <summary>
         /// Called when the bot is invited to a Steam group
         /// </summary>

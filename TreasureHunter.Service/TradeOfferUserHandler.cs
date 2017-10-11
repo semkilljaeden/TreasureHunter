@@ -1,10 +1,11 @@
 ﻿using SteamKit2;
-using SteamTrade;
-using SteamTrade.TradeOffer;
+using TreasureHunter.SteamTrade;
 using System;
 using System.Collections.Generic;
 using TreasureHunter;
-using TradeAsset = SteamTrade.TradeOffer.TradeOffer.TradeStatusUser.TradeAsset;
+using TreasureHunter.SteamTrade;
+using TreasureHunter.SteamTrade.TradeOffer;
+using TradeAsset = TreasureHunter.SteamTrade.TradeOffer.TradeOffer.TradeStatusUser.TradeAsset;
 
 namespace TreasureHunter.Service
 {
@@ -105,6 +106,11 @@ namespace TreasureHunter.Service
                     }
                 }
             }
+        }
+
+        public override bool OnAutoTradeConfirmationFail(TradeOffer offer)
+        {
+            throw new NotImplementedException();
         }
 
         public override bool OnGroupAdd() { return false; }

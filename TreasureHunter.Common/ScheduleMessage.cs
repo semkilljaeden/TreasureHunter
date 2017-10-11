@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TreasureHunter.Common
 {
-    class ScheduleMessage
+    public class ScheduleMessage
     {
     }
 }

@@ -2,10 +2,10 @@ using System;
 using SteamKit2;
 using System.Collections.Generic;
 using System.Linq;
-using SteamTrade;
-using SteamTrade.TradeOffer;
-using SteamTrade.TradeWebAPI;
+using TreasureHunter.SteamTrade;
 using TreasureHunter;
+using TreasureHunter.SteamTrade;
+using TreasureHunter.SteamTrade.TradeOffer;
 
 namespace TreasureHunter.Service
 {
@@ -97,7 +97,7 @@ namespace TreasureHunter.Service
             switch (offer.OfferState)
             {
                 case TradeOfferState.TradeOfferStateAccepted:
-                    Log.Info($"Trade offer {offer.TradeOfferId} from {offer.PartnerSteamId.Render()} has been completed!");
+                    Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} has been completed!");
                     SendChatMessage("Trade completed, thank you!");
                     break;
                 case TradeOfferState.TradeOfferStateActive:
@@ -107,11 +107,11 @@ namespace TreasureHunter.Service
                     }
                     break;
                 case TradeOfferState.TradeOfferStateNeedsConfirmation:
-                    Log.Info($"Trade offer {offer.TradeOfferId} from {offer.PartnerSteamId.Render()} Needs Confirmation");
+                    Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} Needs Confirmation");
                     break;
                 case TradeOfferState.TradeOfferStateInEscrow:
                     //Trade is still active but incomplete
-                    Log.Info($"Trade offer {offer.TradeOfferId} from {offer.PartnerSteamId.Render()} in Escow");
+                    Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} in Escow");
                     break;
                 case TradeOfferState.TradeOfferStateCountered:
                     Log.Info($"Trade offer {offer.TradeOfferId} was countered");
@@ -120,6 +120,12 @@ namespace TreasureHunter.Service
                     Log.Info($"Trade offer {offer.TradeOfferId} failed because of {offer.OfferState}");
                     break;
             }
+        }
+
+        public override bool OnAutoTradeConfirmationFail(TradeOffer offer)
+        {
+            SendChatMessage("Awaiting Bot to Confirm the Trade in Authenticator");
+            return true;
         }
 
         private void OnNewTradeOffer(TradeOffer offer)
@@ -133,12 +139,24 @@ namespace TreasureHunter.Service
                 i => Schema.GetSchema().GetItem(myInventory.GetItem((ulong)i.AssetId).Defindex)).ToList();
             var theirItemsWithSchema = theirItems.Select(
                 i => Schema.GetSchema().GetItem(OtherInventory.GetItem((ulong)i.AssetId).Defindex)).ToList();
-            Log.Info("They want " + Environment.NewLine + string.Join(Environment.NewLine, myItemsWithSchema.Select(i => i.ToString())));
-            Log.Info("And I will get " + Environment.NewLine + string.Join(Environment.NewLine, theirItemsWithSchema.Select(i => i.ToString())));
+            var ourItemString = Environment.NewLine + string.Join(Environment.NewLine + "              ",
+                                      myItemsWithSchema.Select(i => i.ToString()));
+            var theirItemString = Environment.NewLine + string.Join(Environment.NewLine + "              ",
+                                    theirItemsWithSchema.Select(i => i.ToString()));
+            Log.Info("They want " + theirItemString);
+            Log.Info("I will get " + ourItemString);
+            if(!string.IsNullOrEmpty(theirItemString))
+            {
+                SendChatMessage($"You are selling " + theirItemString);
+            }
+            if (!string.IsNullOrEmpty(ourItemString))
+            {
+                SendChatMessage($"You are buying " + ourItemString);
+            }
             string token = Token.GenerateToken();
             double price = Bot.Valuate(myItemsWithSchema, theirItemsWithSchema);
-            Log.Info($"{offer.TradeOfferId} from {offer.PartnerSteamId.Render()} has Token = {token}, Price = {price}");
-            SendChatMessage($"Please pay ${price} in Singapore Dollar and Include Token = {token} in the payment");
+            Log.Info($"{offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} has Token = {token}, Price = {price}");
+            SendChatMessage($"Please pay SGD ${price} and Include Token = {token} in the payment message");
             Bot.EnqueueForPayment(offer, token, price);
         }
         public override void OnTradeAccept() 

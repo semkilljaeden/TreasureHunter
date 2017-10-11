@@ -24,24 +24,14 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
     <ProjectGuid>{9CA83CFE-5702-4B97-BA53-98934AE3867A}</ProjectGuid>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>TreasureHunter.Service</RootNamespace>
+    <AssemblyName>TreasureHunter.Service</AssemblyName>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -85,7 +75,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Token.cs" />
     <Compile Include="BotActor.cs" />
-    <Compile Include="Commander.cs" />
+    <Compile Include="CommandActor.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="Notifications.cs" />
     <Compile Include="PaymentActor.cs" />
@@ -104,9 +94,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SteamTrade\SteamTrade.csproj">
+    <ProjectReference Include="..\SteamTrade\TreasureHunter.SteamTrade.csproj">
       <Project>{bda9a4a1-3b68-4f9e-be97-e2c11263b14b}</Project>
-      <Name>SteamTrade</Name>
+      <Name>TreasureHunter.SteamTrade</Name>
     </ProjectReference>
     <ProjectReference Include="..\TreasureHunter.Common\TreasureHunter.Common.csproj">
       <Project>{591cf921-3027-4114-b062-2dadf4538f24}</Project>

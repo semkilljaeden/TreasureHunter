@@ -7,7 +7,9 @@ using Akka.Actor;
 using Akka.Routing;
 using Akka.Util.Internal;
 using log4net;
-using SteamTrade;
+using TreasureHunter.SteamTrade;
+using TreasureHunter.Common;
+using TreasureHunter.SteamTrade;
 
 namespace TreasureHunter.Service
 {
@@ -21,20 +23,27 @@ namespace TreasureHunter.Service
             if (config == null)
             {
                 Log.Error("No config json, program exit");
+                return;
             }
             _system = ActorSystem.Create("TreasureHunter");
-            var paymentActor = _system.ActorOf(PaymentActor.Props());
-            var valuationActor = _system.ActorOf(ValuationActor.Props());
-            var routees = config.Bots.Select(bot => _system.ActorOf(BotActor.Props(bot, config.ApiKey, (x, y) => new CustomUserHandler(x, y), paymentActor, valuationActor), bot.DisplayName)).ToList();
-            Schema.Init(config.ApiKey);
-            Commander commander = new Commander(routees);
+            var actors = new List<IActorRef>();
+            var paymentActor = _system.ActorOf(PaymentActor.Props(), "Payment");
+            var valuationActor = _system.ActorOf(ValuationActor.Props(), "Valuation");
+            var commander = _system.ActorOf(CommandActor.Props(actors), "Commander");
+            var routees = config.Bots.Select(bot => _system.ActorOf(BotActor.Props(bot, config.ApiKey, (x, y) => new CustomUserHandler(x, y), paymentActor, valuationActor, commander), bot.DisplayName)).ToList();
+            actors.AddRange(routees);
+            actors.Add(paymentActor);
+            actors.Add(valuationActor);
             do
             {
                 Console.Write("botmgr > ");
                 string inputText = Console.ReadLine();
 
-                if (!String.IsNullOrEmpty(inputText))
-                    commander.CommandInterpreter(inputText);
+                if (!string.IsNullOrEmpty(inputText))
+                    commander.Tell(new UserCommandMessage()
+                    {
+                        Text = inputText
+                    });
 
             } while (true);
         }

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Specialized;
-using System.Net;
 using Newtonsoft.Json;
 using SteamKit2;
+using TreasureHunter.SteamTrade;
 
-namespace SteamTrade.TradeWebAPI
+namespace TreasureHunter.SteamTrade.TradeWebAPI
 {
     /// <summary>
     /// This class provides the interface into the Web API for trading on the

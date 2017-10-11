@@ -1,13 +1,7 @@
 ﻿using NUnit.Framework;
-using SteamTrade;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using TreasureHunter.SteamTrade;
 
-namespace SteamTrade.Tests
+namespace SteamTradeTests
 {
     [TestFixture()]
     public class DotaSchemaTests

@@ -1,0 +1,46 @@
+﻿{
+  "Admins" : ["76561198007292267"],
+  "ApiKey" : "209C51C69C8DE0EB6075447AA193E89F",
+  "mainLog": "syslog.log",
+  "UseSeparateProcesses": "false",
+  "AutoStartAllBots": "true",
+	"Bots": [
+					{
+						"ApiKey": "209C51C69C8DE0EB6075447AA193E89F",
+						"Username": "znmiat",
+						"Password": "qweZXC123!@#",
+						"DisplayName": "bot1",
+						"ChatResponse": "ET Eat JB",
+						"logFile": "TestBot.log",
+						"BotControlClass": "SteamBot.SteamTradeDemoHandler",
+						"MaximumTradeTime": 180,
+						"MaximumActionGap": 30,
+						"DisplayNamePrefix": "[Kiljaeden's Bot] ",
+						"TradePollingInterval": 800,
+						"TradeOfferPollingIntervalSecs": 30,
+						"ConsoleLogLevel": "Success",
+						"FileLogLevel": "Info",
+						"AutoStart": "true",
+						"SchemaLang": "en"
+					},
+					{
+						"ApiKey": "2B8E46B74903BA17131F4BFE07E0CACB",
+						"Username": "787029245",
+						"Password": "75395175952xyZ",
+						"DisplayName": "bot2",
+						"ChatResponse": "ET Eat JB",
+						"logFile": "TestBot.log",
+						"BotControlClass": "SteamBot.SteamTradeDemoHandler",
+						"MaximumTradeTime": 180,
+						"MaximumActionGap": 30,
+						"DisplayNamePrefix": "[Kiljaeden's Bot] ",
+						"TradePollingInterval": 800,
+						"TradeOfferPollingIntervalSecs": 30,
+						"ConsoleLogLevel": "Success",
+						"FileLogLevel": "Info",
+						"AutoStart": "true",
+						"SchemaLang": "en"
+					}
+
+	]
+}

@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Remoting.Contexts;
 using System.Threading;
 using System.Threading.Tasks;
 using SteamKit2;
-using SteamTrade.Exceptions;
-using SteamTrade.TradeWebAPI;
+using TreasureHunter.SteamTrade.Exceptions;
+using TreasureHunter.SteamTrade.TradeWebAPI;
 
-namespace SteamTrade
+namespace TreasureHunter.SteamTrade
 {
     /// <summary>
     /// Class which represents a trade.
@@ -63,7 +62,6 @@ namespace SteamTrade
         private readonly List<TradeEvent> eventList;
 
         // current bot's sid
-        private readonly SteamID mySteamId;
 
         private readonly Dictionary<int, TradeUserAssets> myOfferedItemsLocalCopy;
         private readonly TradeSession session;
@@ -81,7 +79,7 @@ namespace SteamTrade
             TradeStarted = false;
             OtherIsReady = false;
             MeIsReady = false;
-            mySteamId = me;
+            MySteamId = me;
             OtherSID = other;
 
             session = new TradeSession(other, steamWeb);
@@ -104,10 +102,7 @@ namespace SteamTrade
         /// <summary>
         /// Gets the bot's Steam ID.
         /// </summary>
-        public SteamID MySteamId
-        {
-            get { return mySteamId; }
-        }
+        public SteamID MySteamId { get; }
 
         /// <summary> 
         /// Gets the inventory of the other user. 
@@ -150,10 +145,7 @@ namespace SteamTrade
         /// <value>
         /// The other offered items.
         /// </value>
-        public IEnumerable<TradeUserAssets> OtherOfferedItems
-        {
-            get { return otherOfferedItems; }
-        }
+        public IEnumerable<TradeUserAssets> OtherOfferedItems => otherOfferedItems;
 
         /// <summary>
         /// Gets the items the bot has offered, by itemid.
@@ -161,10 +153,7 @@ namespace SteamTrade
         /// <value>
         /// The bot offered items.
         /// </value>
-        public IEnumerable<TradeUserAssets> MyOfferedItems
-        {
-            get { return myOfferedItems; }
-        }
+        public IEnumerable<TradeUserAssets> MyOfferedItems => myOfferedItems;
 
         /// <summary>
         /// Gets a value indicating if the other user is ready to trade.

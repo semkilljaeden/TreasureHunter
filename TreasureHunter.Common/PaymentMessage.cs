@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SteamTrade.TradeOffer;
+using TreasureHunter.SteamTrade.TradeOffer;
 
 namespace TreasureHunter.Common
 {

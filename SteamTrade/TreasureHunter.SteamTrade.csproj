@@ -22,10 +22,14 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
     <ProjectGuid>{BDA9A4A1-3B68-4F9E-BE97-E2C11263B14B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>TreasureHunter.SteamTrade</RootNamespace>
+    <AssemblyName>TreasureHunter.SteamTrade</AssemblyName>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -78,7 +82,6 @@
     <Compile Include="Inventory.cs" />
     <Compile Include="SteamWeb.cs" />
     <Compile Include="TradeOffer\OfferSession.cs" />
-    <Compile Include="TradeOffer\ScheduleMessage.cs" />
     <Compile Include="TradeOffer\TradeOffer.cs" />
     <Compile Include="TradeOffer\TradeOfferManager.cs" />
     <Compile Include="TradeOffer\TradeOfferWebAPI.cs" />
@@ -88,7 +91,6 @@
     <Compile Include="Exceptions\InventoryFetchException.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

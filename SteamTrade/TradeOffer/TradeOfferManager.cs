@@ -1,34 +1,32 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using SteamKit2;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using SteamKit2;
+using TreasureHunter.SteamTrade;
 
-namespace SteamTrade.TradeOffer
+namespace TreasureHunter.SteamTrade.TradeOffer
 {
     public class TradeOfferManager
     {
         private readonly Dictionary<string, TradeOfferState> _knownTradeOffers = new Dictionary<string, TradeOfferState>();
         private readonly OfferSession _session;
         private readonly TradeOfferWebAPI _webApi;
-        private readonly ConcurrentQueue<Offer> _unhandledTradeOfferUpdates; 
-
+        private readonly ConcurrentQueue<Offer> _unhandledTradeOfferUpdates;
         public DateTime LastTimeCheckedOffers { get; private set; }
 
-        public TradeOfferManager(string apiKey, SteamWeb steamWeb)
+        public TradeOfferManager(string apiKey, SteamWeb steamWeb, DateTime lastTimeCheckedOffers)
         {
             if (apiKey == null)
                 throw new ArgumentNullException(nameof(apiKey));
-
-            LastTimeCheckedOffers = DateTime.MinValue;
+            LastTimeCheckedOffers = lastTimeCheckedOffers;
             _webApi = new TradeOfferWebAPI(apiKey, steamWeb);
             _session = new OfferSession(_webApi, steamWeb);
             _unhandledTradeOfferUpdates = new ConcurrentQueue<Offer>();
         }
 
-        public delegate void TradeOfferUpdatedHandler(TradeOffer offer);
+        public delegate void TradeOfferUpdatedHandler(TreasureHunter.SteamTrade.TradeOffer.TradeOffer offer);
 
         /// <summary>
         /// Occurs when a new trade offer has been made by the other user
@@ -103,6 +101,10 @@ namespace SteamTrade.TradeOffer
         private void SendOfferToHandler(Offer offer)
         {
             _knownTradeOffers[offer.TradeOfferId] = offer.TradeOfferState;
+            if (OnTradeOfferUpdated == null)
+            {
+                throw new NullReferenceException(nameof(OnTradeOfferUpdated));
+            }
             OnTradeOfferUpdated(new TradeOffer(_session, offer));
         }
 
@@ -125,7 +127,7 @@ namespace SteamTrade.TradeOffer
             {
                 if (IsOfferValid(resp.Offer))
                 {
-                    tradeOffer = new TradeOffer(_session, resp.Offer);
+                    tradeOffer = new TreasureHunter.SteamTrade.TradeOffer.TradeOffer(_session, resp.Offer);
                     return true;
                 }
                 else

@@ -10,18 +10,20 @@ using log4net;
 using TreasureHunter.Common;
 namespace TreasureHunter.Service
 {
-    class Commander
+    class CommandActor : ReceiveActor
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof(Commander));
+        private static readonly ILog Log = LogManager.GetLogger(typeof(CommandActor));
         private readonly CommandSet _p;
         private string _start = String.Empty;
         private string _stop = String.Empty;
         private bool _showHelp;
         private bool _clearConsole;
         private readonly List<IActorRef> _routees;
-        public Commander(List<IActorRef> routees)
+        public CommandActor(List<IActorRef> routees)
         {
             _routees = routees;
+            Receive<UserCommandMessage>(msg => CommandInterpreter(msg.Text));
+            Receive<ActorCommandMessage>(msg => HandleActorCommand(msg.Text));
             _p = new CommandSet
             {
                 new BotManagerOption("stop", "stop (X) where X = the username or index of the configured bot",
@@ -38,6 +40,9 @@ namespace TreasureHunter.Service
                 new BotManagerOption("exec",
                     "exec (X) (Y) where X = the username or index of the bot and Y = your custom command to execute",
                     ExecCommand),
+                new BotManagerOption("release",
+                    "release (X) where X = trade token",
+                    ReleaseItem),
                 new BotManagerOption("input",
                     "input (X) (Y) where X = the username or index of the bot and Y = your input",
                     InputCommand),
@@ -45,6 +50,34 @@ namespace TreasureHunter.Service
             };
         }
 
+        public void HandleActorCommand(string msg)
+        {
+            Log.Info(msg);
+        }
+
+        public static Props Props(List<IActorRef> routees)
+        {
+            return Akka.Actor.Props.Create(() => new CommandActor(routees));
+        }
+
+        #region Command Handler
+
+        void ReleaseItem(string auth)
+        {
+            var actor = _routees.FirstOrDefault(r => r.Path.Name == "Payment");
+            if (actor == null)
+            {
+                Log.Error($"Cannot find Payment Service");
+                return;
+            }
+            actor?.Tell(new CommandMessage()
+            {
+                Type = CommandMessage.MessageType.ReleaseItem,
+                MessageText = auth
+            });
+            Log.Info($"Release Trade with Token {auth}");
+
+        }
         void ShowHelp(string auth)
         {
             Console.WriteLine("");
@@ -55,9 +88,9 @@ namespace TreasureHunter.Service
         {
             if (string.IsNullOrEmpty(auth))
             {
-                _routees.ForEach(r => r.Tell(new Message()
+                _routees.ForEach(r => r.Tell(new CommandMessage()
                 {
-                    Type = Message.MessageType.Start,
+                    Type = CommandMessage.MessageType.Start,
                 }));
             }
             else
@@ -68,9 +101,9 @@ namespace TreasureHunter.Service
                     Console.WriteLine("Wrong bot name");
                     return;
                 }
-                routee.Tell(new Message()
+                routee.Tell(new CommandMessage()
                 {
-                    Type = Message.MessageType.Start,
+                    Type = CommandMessage.MessageType.Start,
                 });
             }
 
@@ -125,9 +158,9 @@ namespace TreasureHunter.Service
                 // Take the rest of the input as is
                 var command = cmd.Remove(0, cs[0].Length + 1);
 
-                _routees.FirstOrDefault(r => r.Path.Name == cs[0])?.Tell(new Message()
+                _routees.FirstOrDefault(r => r.Path.Name == cs[0])?.Tell(new CommandMessage()
                 {
-                    Type = Message.MessageType.Exec,
+                    Type = CommandMessage.MessageType.Exec,
                     MessageText = command
                 });
             }
@@ -157,9 +190,9 @@ namespace TreasureHunter.Service
                 var input = inpt.Remove(0, cs[0].Length + 1);
 
 
-                _routees.FirstOrDefault(r => r.Path.Name == cs[0])?.Tell(new Message()
+                _routees.FirstOrDefault(r => r.Path.Name == cs[0])?.Tell(new CommandMessage()
                 {
-                    Type = Message.MessageType.Input,
+                    Type = CommandMessage.MessageType.Input,
                     MessageText = input
                 });
             }
@@ -172,6 +205,8 @@ namespace TreasureHunter.Service
 
 
         }
+        #endregion
+
 
         #region Nested Options classes
         // these are very much like the NDesk.Options but without the

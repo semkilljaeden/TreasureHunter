@@ -4,8 +4,9 @@ using System.Linq;
 using log4net;
 using Newtonsoft.Json;
 using SteamKit2;
+using TreasureHunter.SteamTrade;
 
-namespace SteamTrade
+namespace TreasureHunter.SteamTrade
 {
     public class Inventory
     {
@@ -81,7 +82,7 @@ namespace SteamTrade
         {
             // Check for Private Inventory
             if( this.IsPrivate )
-                throw new Exceptions.TradeException("Unable to access Inventory: Inventory is Private!");
+                throw new global::TreasureHunter.SteamTrade.Exceptions.TradeException("Unable to access Inventory: Inventory is Private!");
 
             return Items?.FirstOrDefault(item => item.Id == id);
         }
@@ -90,7 +91,7 @@ namespace SteamTrade
         {
             // Check for Private Inventory
             if( this.IsPrivate )
-                throw new Exceptions.TradeException("Unable to access Inventory: Inventory is Private!");
+                throw new global::TreasureHunter.SteamTrade.Exceptions.TradeException("Unable to access Inventory: Inventory is Private!");
 
             return Items.Where(item => item.Defindex == defindex).ToList();
         }
