@@ -1,0 +1,61 @@
+﻿{
+  "TreasureHunter": {
+    "id": "264245a2-a553-4c60-b0d6-d43e863c7f91",
+    "offer": {
+      "expirationTime": 1508786807,
+      "isFirstOffer": true,
+      "isOurOffer": false,
+      "items": {
+        "me": {
+          "assets": [
+            {
+              "amount": 1,
+              "appid": 570,
+              "assetid": "8028398832",
+              "contextid": 2
+            }
+          ],
+          "currency": [],
+          "ready": false
+        },
+        "newversion": false,
+        "them": {
+          "assets": [],
+          "currency": [],
+          "ready": false
+        },
+        "version": 1
+      },
+      "message": "",
+      "offerState": 2,
+      "partnerSteamId": {
+        "accountID": 120344634,
+        "accountInstance": 1,
+        "accountType": 1,
+        "accountUniverse": 1,
+        "isAnonAccount": false,
+        "isAnonGameServerAccount": false,
+        "isAnonUserAccount": false,
+        "isBlankAnonAccount": false,
+        "isChatAccount": false,
+        "isClanAccount": false,
+        "isConsoleUserAccount": false,
+        "isContentServerAccount": false,
+        "isGameServerAccount": false,
+        "isIndividualAccount": true,
+        "isLobby": false,
+        "isPersistentGameServerAccount": false,
+        "isValid": true
+      },
+      "session": {},
+      "timeCreated": 1507577207,
+      "timeUpdated": 1507577207,
+      "tradeOfferId": "2573218320"
+    },
+    "offerState": 2,
+    "paidAmmount": 0,
+    "price": 0,
+    "state": 3,
+    "tradeOfferId": "2573218320"
+  }
+}

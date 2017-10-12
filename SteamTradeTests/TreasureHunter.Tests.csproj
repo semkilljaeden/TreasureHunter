@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="json\tradeOfferTransaction.json" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

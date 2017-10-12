@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TreasureHunter.Common
+﻿namespace TreasureHunter.Contract.AkkaMessageObject
 {
     public enum DataAccessActionType
     {
         UpdateTradeOffer,
-        UpdatePendingTradeOffer
+        Retrieve,
     }
     public class DataAccessMessage<T>
     {

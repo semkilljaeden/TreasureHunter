@@ -1,4 +1,4 @@
-﻿namespace TreasureHunter.Common
+﻿namespace TreasureHunter.Contract.AkkaMessageObject
 {
     public class CommandMessage
     {

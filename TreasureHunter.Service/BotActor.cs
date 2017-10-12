@@ -16,10 +16,10 @@ using SteamKit2;
 using SteamKit2.Internal;
 using TreasureHunter.SteamTrade;
 using TreasureHunter.Service.SteamGroups;
-using TreasureHunter.Common;
-using TreasureHunter.Common.TransactionObjects;
-using TreasureHunter.SteamTrade;
 using TreasureHunter.SteamTrade.TradeOffer;
+using TreasureHunter.Contract;
+using TreasureHunter.Contract.AkkaMessageObject;
+using TreasureHunter.Contract.TransactionObjects;
 
 namespace TreasureHunter.Service
 {
@@ -31,8 +31,6 @@ namespace TreasureHunter.Service
         private readonly IActorRef _valuationActor;
         private readonly IActorRef _commandActor;
         private readonly IActorRef _dataAccessActor;
-        private ICancelable _cancelToken;
-        private ICancelable _tradeOfferCancelToken;
         private readonly IActorRef _mySelf;
         public BotActor(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor, IActorRef commandActor, IActorRef dataAccessActor) :
             this(info, apiKey, creator, false, false)
@@ -42,7 +40,7 @@ namespace TreasureHunter.Service
             _commandActor = commandActor;
             _dataAccessActor = dataAccessActor;
             Receive<CommandMessage>(msg => RunCommand(msg));
-            Receive<PaymentMessage>(msg => OnPaymentUpdate(msg));
+            Receive<PaymentNotificationMessage>(msg => OnPaymentUpdate(msg));
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             _mySelf = Self;
         }
@@ -51,11 +49,18 @@ namespace TreasureHunter.Service
             Log.Error(e.Exception);
         }
 
-        internal TradeOfferTransaction UpdateTradeOffer(TradeOfferTransaction pendingOffer)
+        internal TradeOfferTransaction UpdateTradeOffer(TradeOfferTransaction pendingOffer, DataAccessActionType type)
         {
+            if (type == DataAccessActionType.UpdateTradeOffer)
+            {
+                _dataAccessActor
+                    .Tell(
+                        new DataAccessMessage<TradeOfferTransaction>(pendingOffer, type));
+                return null;
+            }
             var dataAccessMsg = _dataAccessActor
                 .Ask<DataAccessMessage<TradeOfferTransaction>>(
-                new DataAccessMessage<TradeOfferTransaction>(pendingOffer, DataAccessActionType.UpdatePendingTradeOffer)).Result;
+                new DataAccessMessage<TradeOfferTransaction>(pendingOffer, type)).Result;
             return dataAccessMsg.Content;
         }
 
@@ -69,6 +74,11 @@ namespace TreasureHunter.Service
                     break;
                 case CommandMessage.MessageType.Exec:
                     HandleBotCommand(commandMessage.MessageText);
+                    break;
+                case CommandMessage.MessageType.Input:
+                    _threadCommunicator.Enqueue(commandMessage.MessageText);
+                    break;
+                case CommandMessage.MessageType.ReleaseItem:
                     break;
             }
         }
@@ -390,13 +400,6 @@ namespace TreasureHunter.Service
 
         #region Payment
 
-        public void EnqueueForPayment(TradeOfferTransaction offer)
-        {
-            var transaction = new TradeOfferTransaction(offer, TradeOfferTransactionState.UnPaid, 0.0);
-            UpdateTradeOffer(transaction);
-            _paymentActor.Tell(transaction, _mySelf);
-        }
-
         public void PaymentNotifySelf(TradeOfferTransaction transaction)
         {
             Self.Tell(new PaymentNotificationMessage(transaction.Id));
@@ -411,24 +414,40 @@ namespace TreasureHunter.Service
             }).Result.Price;
         }
 
-        private void OnPaymentUpdate(PaymentMessage msg)
+        private void OnPaymentUpdate(PaymentNotificationMessage msg)
         {
-            double paid = msg.PaidAmmount;
-            SteamFriends.SendChatMessage(msg.Offer.PartnerSteamId, EChatEntryType.ChatMsg, $"Trade Token = {msg.Token}, Price = {msg.Price} -------> receive ${paid} in Singapore Dollar");
-            if (msg.IsPaid)
+            var transaction = _dataAccessActor
+                .Ask<DataAccessMessage<TradeOfferTransaction>>(new DataAccessMessage<TradeOfferTransaction>(
+                    new TradeOfferTransaction(msg.PaymentId), DataAccessActionType.Retrieve))
+                .Result.Content;
+
+            if (transaction == null)
             {
-                var acceptResp = msg.Offer.Accept();
+                Log.Error("Transaction retreive fail");
+                return;
+            }
+            if (transaction.State == TradeOfferTransactionState.Completed)
+            {
+                Log.Error("Transaction already Processed");
+                return;
+            }
+            SteamFriends.SendChatMessage(transaction.Offer.PartnerSteamId, EChatEntryType.ChatMsg, $"Trade Id = {transaction.Id}, Price = {transaction.Price} -------> receive ${transaction.PaidAmmount} in Singapore Dollar");
+            if (transaction.State == TradeOfferTransactionState.Paid)
+            {
+                var offer = transaction.Offer;
+                offer.Session = this._tradeOfferManager.Session;
+                var acceptResp = offer.Accept();
                 if (acceptResp.Accepted)
                 {
-                    SteamFriends.SendChatMessage(msg.Offer.PartnerSteamId, EChatEntryType.ChatMsg, $"Trade Token = {msg.Token}, Price = {msg.Price} -------> Payment Successful");
+                    SteamFriends.SendChatMessage(transaction.Offer.PartnerSteamId, EChatEntryType.ChatMsg, $"Trade Id = {transaction.Id},  -------> Payment Success!!!!"); ;
                     if (AcceptAllMobileTradeConfirmations())
                     {
                         Log.Info("Accepted trade offer successfully : Trade ID: " + acceptResp.TradeId);
                     }
                     else
                     {
-                        GetUserHandler(msg.Offer.PartnerSteamId).OnAutoTradeConfirmationFail(msg.Offer);
-                        Log.Info($"Waiting Manual Trade Confirmation On TradeOffer {msg.Token}");
+                        //GetUserHandler(msg.Offer.PartnerSteamId).OnAutoTradeConfirmationFail(msg.Offer);
+                        Log.Info($"Waiting Manual Trade Confirmation On TradeOffer {transaction.Id}");
                     }
 
                 }
@@ -904,9 +923,6 @@ namespace TreasureHunter.Service
             public TradeOfferEscrowDurationParseException(string message) : base(message) { }
         }
 
-
-
-        #endregion
         /// <summary>
         /// Methods regardig background threads
         /// </summary>
@@ -923,7 +939,7 @@ namespace TreasureHunter.Service
             {
                 Text = message
             });
-            while (_threadCommunicator.TryDequeue(out input))
+            while (!_threadCommunicator.TryDequeue(out input))
             {
                 
             }

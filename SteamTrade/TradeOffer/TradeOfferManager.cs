@@ -11,18 +11,17 @@ namespace TreasureHunter.SteamTrade.TradeOffer
     public class TradeOfferManager
     {
         private readonly Dictionary<string, TradeOfferState> _knownTradeOffers = new Dictionary<string, TradeOfferState>();
-        private readonly OfferSession _session;
+        public OfferSession Session { get; private set; }
         private readonly TradeOfferWebAPI _webApi;
         private readonly ConcurrentQueue<Offer> _unhandledTradeOfferUpdates;
         public DateTime LastTimeCheckedOffers { get; private set; }
-
         public TradeOfferManager(string apiKey, SteamWeb steamWeb, DateTime lastTimeCheckedOffers)
         {
             if (apiKey == null)
                 throw new ArgumentNullException(nameof(apiKey));
             LastTimeCheckedOffers = lastTimeCheckedOffers;
             _webApi = new TradeOfferWebAPI(apiKey, steamWeb);
-            _session = new OfferSession(_webApi, steamWeb);
+            Session = new OfferSession(_webApi, steamWeb);
             _unhandledTradeOfferUpdates = new ConcurrentQueue<Offer>();
         }
 
@@ -105,7 +104,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
             {
                 throw new NullReferenceException(nameof(OnTradeOfferUpdated));
             }
-            OnTradeOfferUpdated(new TradeOffer(_session, offer));
+            OnTradeOfferUpdated(new TradeOffer(Session, offer));
         }
 
         private uint GetUnixTimeStamp(DateTime dateTime)
@@ -116,7 +115,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
 
         public TradeOffer NewOffer(SteamID other)
         {
-            return new TradeOffer(_session, other);
+            return new TradeOffer(Session, other);
         }
 
         public bool TryGetOffer(string offerId, out TradeOffer tradeOffer)
@@ -127,7 +126,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
             {
                 if (IsOfferValid(resp.Offer))
                 {
-                    tradeOffer = new TreasureHunter.SteamTrade.TradeOffer.TradeOffer(_session, resp.Offer);
+                    tradeOffer = new TreasureHunter.SteamTrade.TradeOffer.TradeOffer(Session, resp.Offer);
                     return true;
                 }
                 else

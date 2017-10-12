@@ -7,7 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Akka.Actor;
 using log4net;
-using TreasureHunter.Common;
+using TreasureHunter.Contract.AkkaMessageObject;
+
 namespace TreasureHunter.Service
 {
     class CommandActor : ReceiveActor

@@ -2,10 +2,9 @@ using System;
 using SteamKit2;
 using System.Collections.Generic;
 using System.Linq;
+using TreasureHunter.Contract.AkkaMessageObject;
+using TreasureHunter.Contract.TransactionObjects;
 using TreasureHunter.SteamTrade;
-using TreasureHunter;
-using TreasureHunter.Common.TransactionObjects;
-using TreasureHunter.Transaction;
 using TreasureHunter.SteamTrade.TradeOffer;
 
 namespace TreasureHunter.Service
@@ -95,6 +94,40 @@ namespace TreasureHunter.Service
 
         public override void OnTradeOfferUpdated(TradeOffer offer)
         {
+            var escowDuration = Bot.GetEscrowDuration(offer.PartnerSteamId, null);
+            var itemsTuple = GetItems(offer);
+            var ourItemString = Environment.NewLine + string.Join(Environment.NewLine + "              ",
+                                    itemsTuple.Item1.Select(i => i.ToString()));
+            var theirItemString = Environment.NewLine + string.Join(Environment.NewLine + "              ",
+                                      itemsTuple.Item2.Select(i => i.ToString()));
+            Log.Info($"New Order Received from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} OrderId = " + offer.TradeOfferId);
+            Log.Info("They want " + theirItemString);
+            Log.Info("I will get " + ourItemString);
+            Log.Info("Update the Offer...");
+            double price = Bot.Valuate(itemsTuple.Item1, itemsTuple.Item2);
+            var transaction = Bot
+                .UpdateTradeOffer(new TradeOfferTransaction(offer.TradeOfferId), DataAccessActionType.Retrieve);
+            if (transaction.Id == Guid.Empty)
+            {
+                transaction = new TradeOfferTransaction(offer, TradeOfferTransactionState.New, price);
+            }
+            else
+            {
+                transaction = new TradeOfferTransaction(transaction, offer);
+            }
+            Log.Info($"{transaction.Id} " + Environment.NewLine + 
+                     $"from {Bot.SteamFriends.GetFriendPersonaName(transaction.Offer.PartnerSteamId)} " + Environment.NewLine +
+                     $"State = {transaction.State}, " + Environment.NewLine +
+                     $"Price = {transaction.Price}" + Environment.NewLine +
+                     $"PaidAmmount = {transaction.PaidAmmount}" + Environment.NewLine + 
+                     $"Transaction State = {transaction.State}");
+            if (offer.OfferState != transaction.OfferState)
+            {
+                Log.Info("New TradeOffer State:" + offer.OfferState);
+                Log.Info("TradeOffer in Database State:" + transaction.OfferState);
+            }
+            Bot
+                .UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
             switch (offer.OfferState)
             {
                 case TradeOfferState.TradeOfferStateAccepted:
@@ -104,22 +137,104 @@ namespace TreasureHunter.Service
                 case TradeOfferState.TradeOfferStateActive:
                     if (!offer.IsOurOffer)
                     {
-                        OnNewTradeOffer(offer);
+                        switch (transaction.State)
+                        {
+                            case TradeOfferTransactionState.New:
+                                Log.Info("New Trade Found");
+                                if (escowDuration.DaysMyEscrow > 0)
+                                {
+                                    SendChatMessage(
+                                        $"WARNING!!!!! This Bot is under Trade escowDuration and the items you buying will be hold by steam for {escowDuration.DaysMyEscrow}, if you don't want to proceed please cancel the tradeoffer and do not pay");
+                                }
+                                if (escowDuration.DaysTheirEscrow > 0)
+                                {
+                                    SendChatMessage(
+                                        $"WARNING!!!!! You are under Trade escowDuration and the items you buying will be hold by steam for {escowDuration.DaysMyEscrow}, if you don't want to proceed please cancel the tradeoffer and do not pay");
+                                }
+                                SendChatMessage($"Please pay SGD ${transaction.Price} to {Transaction.Transaction.PaymentMethod} for Order {transaction.Id}");
+                                break;
+                            case TradeOfferTransactionState.Paid:
+                            case TradeOfferTransactionState.Completed:
+                                Log.Info($"Existing Trade, Paid completed {transaction.Id}");
+                                Bot.PaymentNotifySelf(transaction);
+                                break;
+                            case TradeOfferTransactionState.PartialPaid:
+                                Log.Info($"Existing Trade, Partial Paid, Price = {transaction.Price}, PaidAmmount = {transaction.PaidAmmount} {transaction.Id}");
+                                SendChatMessage(
+                                    $"Please pay SGD ${transaction.Price - transaction.PaidAmmount} to {Transaction.Transaction.PaymentMethod} for Order {transaction.Id}");
+                                break;
+                            case TradeOfferTransactionState.Expired:
+                                Log.Info($"Existing Trade, Transaction Expired");
+                                SendChatMessage(
+                                    $"Payment Period Expired for Order {transaction.Id}");
+                                offer.Decline();
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
                     }
                     break;
                 case TradeOfferState.TradeOfferStateNeedsConfirmation:
-                    Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} Needs Confirmation");
+                    Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} Needs {(offer.IsOurOffer ? "bot" : offer.TradeOfferId)} Confirmation");                    
+                    switch (transaction.State)
+                    {
+                        case TradeOfferTransactionState.Completed:                          
+                            if (!offer.IsOurOffer)
+                            {
+                                SendChatMessage($"Please Confirm Trade");
+                            }
+                            break;
+                        case TradeOfferTransactionState.New:
+                        case TradeOfferTransactionState.Paid:
+                        case TradeOfferTransactionState.PartialPaid:
+                            Log.Error("Trade reachs confirmation stage but transaction is at " + transaction.State);
+                            break;
+                    }
                     break;
                 case TradeOfferState.TradeOfferStateInEscrow:
-                    //Trade is still active but incomplete
-                    Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} in Escow");
-                    OnTradeInEscow(offer);
+                    Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} in Escow");                    
+                    switch (transaction.State)
+                    {
+                        case TradeOfferTransactionState.Completed:
+                            Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} Needs {(offer.IsOurOffer ? "bot" : offer.TradeOfferId)} Confirmation");
+                            string @object = offer.IsOurOffer ? "Bot's" : "Your";
+                            Log.Info($"Existing Trade, Paid completed {transaction.Id}¡£ Due to {@object} Account Limitation, the Trade is on-hold by steam");
+                            SendChatMessage($"Due to {@object} Account Limitation, the Trade is on-hold by steam");
+                            break;
+                        case TradeOfferTransactionState.New:
+                        case TradeOfferTransactionState.Paid:
+                        case TradeOfferTransactionState.PartialPaid:
+                            Log.Error("Trade reachs escow stage but transaction is at " + transaction.State);
+                            break;
+                    }
+                    
                     break;
                 case TradeOfferState.TradeOfferStateCountered:
-                    Log.Info($"Trade offer {offer.TradeOfferId} was countered");
-                    break;                
-                default:
-                    Log.Info($"Trade offer {offer.TradeOfferId} failed because of {offer.OfferState}");
+                    Log.Info($"Trade offer {offer.TradeOfferId} was countered by " + (offer.IsOurOffer ? "bot" : Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)));
+                    break;
+                case TradeOfferState.TradeOfferStateInvalid:
+                case TradeOfferState.TradeOfferStateExpired:
+                case TradeOfferState.TradeOfferStateCanceled:
+                case TradeOfferState.TradeOfferStateDeclined:
+                case TradeOfferState.TradeOfferStateInvalidItems:
+                case TradeOfferState.TradeOfferStateCanceledBySecondFactor:
+                case TradeOfferState.TradeOfferStateUnknown:
+                    Log.Info($"Trade offer {offer.TradeOfferId} failed because of {offer.OfferState}");                   
+                    switch (transaction.State)
+                    {
+                        case TradeOfferTransactionState.Completed:
+                            Log.Info($"Existing Trade, Paid completed {transaction.Id}");
+                            SendChatMessage($"Due to Unknown failure, we have received your payment but the item is not traded, Please contact our support");
+                            break;
+                        case TradeOfferTransactionState.PartialPaid:
+                            Log.Info($"Existing Trade, Paid partially ammount = {transaction.PaidAmmount} for {transaction.Id}");
+                            SendChatMessage($"Due to Unknown failure, we have received your partial payment but the item is not traded, Please contact our support");
+                            break;
+                        case TradeOfferTransactionState.New:
+                        case TradeOfferTransactionState.Paid:
+                            Log.Error("Trade reachs escow stage but transaction is at " + transaction.State);
+                            break;
+                    }
                     break;
             }
         }
@@ -140,67 +255,6 @@ namespace TreasureHunter.Service
             return new Tuple<List<Schema.Item>, List<Schema.Item>>(myItemsWithSchema, theirItemsWithSchema);
         }
 
-        private void OnTradeInEscow(TradeOffer offer)
-        {
-            
-        }
-        private void OnNewTradeOffer(TradeOffer offer)
-        {
-            var itemsTuple = GetItems(offer);
-            var ourItemString = Environment.NewLine + string.Join(Environment.NewLine + "              ",
-                                    itemsTuple.Item1.Select(i => i.ToString()));
-            var theirItemString = Environment.NewLine + string.Join(Environment.NewLine + "              ",
-                                      itemsTuple.Item2.Select(i => i.ToString()));
-            Log.Info($"New Order Received from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} OrderId = " + offer.TradeOfferId);
-            Log.Info("They want " + theirItemString);
-            Log.Info("I will get " + ourItemString);
-            Log.Info("Update the Offer...");           
-            double price = Bot.Valuate(itemsTuple.Item1, itemsTuple.Item2);
-            var pending = Bot
-                .UpdateTradeOffer(new TradeOfferTransaction(offer, TradeOfferTransactionState.New, price));
-            Log.Info($"{pending.Id} " +
-                     $"from {Bot.SteamFriends.GetFriendPersonaName(pending.Offer.PartnerSteamId)} " +
-                     $"State = {pending.State}, " +
-                     $"Price = {pending.Price}" +
-                     $"PaidAmmount = {pending.PaidAmmount}");
-            switch (pending.State)
-            {
-                case TradeOfferTransactionState.New:
-                    Log.Info("New Trade Found");
-                    SendChatMessage($"Please pay SGD ${pending.Price} to {Transaction.Transaction.PaymentMethod} for Order {pending.Id}");
-                    Bot.EnqueueForPayment(pending);
-                    break;
-                case TradeOfferTransactionState.Paid:
-                case TradeOfferTransactionState.Completed:
-                    Log.Info($"Existing Trade, Paid completed {pending.Id}");
-                    Bot.PaymentNotifySelf(pending);
-                    break;
-                case TradeOfferTransactionState.PartialPaid:
-                    Log.Info($"Existing Trade, Partial Paid, Price = {pending.Price}, PaidAmmount = {pending.PaidAmmount} {pending.Id}");
-                    SendChatMessage(
-                        $"Please pay SGD ${pending.Price - pending.PaidAmmount} to {Transaction.Transaction.PaymentMethod} for Order {pending.Id}");
-                    break;
-                case TradeOfferTransactionState.UnPaid:
-                    Log.Info($"Existing Trade, UnPaid, Price = {pending.Price}, PaidAmmount = {pending.PaidAmmount} {pending.Id}");
-                    break;
-                case TradeOfferTransactionState.Expired:
-                    Log.Info($"Existing Trade, Trade Expired");
-                    SendChatMessage(
-                        $"Trade Expired for Order {pending.Id}");
-                    offer.Decline();
-                    Bot.UpdateTradeOffer(new TradeOfferTransaction(pending, TradeOfferTransactionState.Declined,
-                        pending.PaidAmmount));
-                    break;
-                case TradeOfferTransactionState.Declined:
-                    Log.Info($"Existing Trade, Trade Declined");
-                    SendChatMessage(
-                        $"Trade Declined by Bot for Order {pending.Id}");
-                    offer.Decline();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
         public override void OnTradeAccept() 
         {
             if (IsAdmin)

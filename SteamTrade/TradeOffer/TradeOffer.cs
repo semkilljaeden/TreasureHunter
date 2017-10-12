@@ -11,7 +11,7 @@ namespace TreasureHunter.SteamTrade.TradeOffer
     public class TradeOffer
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(TradeOffer));
-        private OfferSession Session { get; set; }
+        public OfferSession Session { get; set; }
 
         public SteamID PartnerSteamId { get; private set; }
 

@@ -78,7 +78,6 @@
     <Compile Include="CommandActor.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="Notifications.cs" />
-    <Compile Include="PaymentActor.cs" />
     <Compile Include="TreasureHunter.cs" />
     <Compile Include="CustomUserHandler.cs" />
     <Compile Include="SteamGroups\CMsgGroupInviteAction.cs" />
@@ -96,8 +95,8 @@
       <Project>{bda9a4a1-3b68-4f9e-be97-e2c11263b14b}</Project>
       <Name>TreasureHunter.SteamTrade</Name>
     </ProjectReference>
-    <ProjectReference Include="..\TreasureHunter.Common\TreasureHunter.Contract.csproj">
-      <Project>{591cf921-3027-4114-b062-2dadf4538f24}</Project>
+    <ProjectReference Include="..\TreasureHunter.Contract\TreasureHunter.Contract.csproj">
+      <Project>{ee650280-11e0-4a5f-b688-57979cc17622}</Project>
       <Name>TreasureHunter.Contract</Name>
     </ProjectReference>
     <ProjectReference Include="..\TreasureHunter.DataAccess\TreasureHunter.DataAccess.csproj">
@@ -120,6 +119,9 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

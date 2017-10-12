@@ -7,10 +7,10 @@ using Akka.Actor;
 using Akka.Routing;
 using Akka.Util.Internal;
 using log4net;
+using TreasureHunter.Contract.AkkaMessageObject;
 using TreasureHunter.SteamTrade;
-using TreasureHunter.Common;
 using TreasureHunter.DataAccess;
-using TreasureHunter.SteamTrade;
+using TreasureHunter.Transaction;
 
 namespace TreasureHunter.Service
 {

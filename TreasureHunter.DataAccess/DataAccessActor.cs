@@ -13,6 +13,8 @@ using Newtonsoft.Json;
 using TreasureHunter;
 using TreasureHunter.SteamTrade.TradeOffer;
 using log4net;
+using TreasureHunter.Contract.AkkaMessageObject;
+using TreasureHunter.Contract.TransactionObjects;
 
 namespace TreasureHunter.DataAccess
 {
@@ -27,25 +29,25 @@ namespace TreasureHunter.DataAccess
             var section = ConfigurationManager.GetSection("Couchbase");
             ClusterHelper.Initialize(new ClientConfiguration((CouchbaseClientSection)section));
             _bucket = ClusterHelper.GetBucket("TreasureHunter");
-            Receive<TradeOffer>(msg => PersistTradeOffer(msg));
+            Receive<DataAccessMessage<TradeOfferTransaction>>(msg => PersistTradeOffer(msg));
         }
-        private void PersistTradeOffer(TradeOffer trade)
+
+        private string GetId(TradeOfferTransaction transaction)
         {
-            var json = JsonConvert.SerializeObject(trade);
-            var content = new Content()
-            {
-                BotPath = Sender.Path,
-                ContentType = typeof(TradeOffer),
-                Object = json,
-                Id = trade.TradeOfferId
-            };
+            return Sender.Path + "_" + transaction.Id.ToString();
+        }
+        private void UpdateTradeOffer(TradeOfferTransaction transaction)
+        {
+            var result = _bucket.GetDocument<Document<List<TradeOfferTransaction>>>(GetId(transaction));
+            var transactionList = result.Content?.Content ?? new List<TradeOfferTransaction>();
+            transactionList.Add(transaction);
             var doc = new Document<dynamic>
             {
-                Id = content.GetDocumentId(),
-                Content = content
+                Id = GetId(transaction),
+                Content = transactionList,
             };
-            var result = _bucket.Insert(doc);
-            if (result.Success)
+            var r = _bucket.Insert(doc);
+            if (r.Success)
             {
                 Log.Info("Trade Offer Persisted");
             }
@@ -54,6 +56,54 @@ namespace TreasureHunter.DataAccess
                 Log.Error("Error in persisting TradeOffer");
             }
         }
+
+        private TradeOfferTransaction Retrieve(TradeOfferTransaction transaction)
+        {
+            if (transaction.Id != Guid.Empty)
+            {
+                var result = _bucket.GetDocument<Document<List<TradeOfferTransaction>>>(GetId(transaction));
+                if (result.Success)
+                {
+                    return result.Content.Content.Last();
+                }
+                else
+                {
+                    Log.Error("Cannot find");
+                    return null;
+                }
+            }
+            else if (transaction.TradeOfferId != null)
+            {
+                var result = _bucket.Query<Document<List<TradeOfferTransaction>>>($"select * from `TreasureHunter` where ttradeOfferId = '{transaction.TradeOfferId}'");
+                if (result.Success)
+                {
+                    return result.GetEnumerator().Current?.Content.Last();
+                }
+                else
+                {
+                    Log.Error("Cannot find");
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        private void PersistTradeOffer(DataAccessMessage<TradeOfferTransaction> doc)
+        {
+            switch (doc.ActionType)
+            {
+                case DataAccessActionType.UpdateTradeOffer:
+                    UpdateTradeOffer(doc.Content);
+                    break;
+                case DataAccessActionType.Retrieve:
+                    Sender.Tell(new DataAccessMessage<TradeOfferTransaction>(Retrieve(doc.Content),
+                        DataAccessActionType.Retrieve));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
         public static Props Props(List<IActorRef> routees)
         {
             return Akka.Actor.Props.Create(() => new DataAccessActor(routees));

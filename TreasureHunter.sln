@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26403.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreasureHunter.SteamTrade", "SteamTrade\TreasureHunter.SteamTrade.csproj", "{BDA9A4A1-3B68-4F9E-BE97-E2C11263B14B}"
 EndProject
@@ -11,11 +11,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreasureHunter.Tests", "Ste
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreasureHunter.ServiceHost", "TreasureHunter.ServiceHost\TreasureHunter.ServiceHost.csproj", "{C0970AC9-05CF-4CF7-B527-BAAD00277407}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreasureHunter.Contract", "TreasureHunter.Common\TreasureHunter.Contract.csproj", "{591CF921-3027-4114-B062-2DADF4538F24}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreasureHunter.DataAccess", "TreasureHunter.DataAccess\TreasureHunter.DataAccess.csproj", "{61FEE5E9-E0C0-4893-957E-A7F5FE2492F5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreasureHunter.Transaction", "TreasureHunter.Transaction\TreasureHunter.Transaction.csproj", "{5E7F26D9-EFF1-4FB6-B7AB-6FE909A0B59E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreasureHunter.Contract", "TreasureHunter.Contract\TreasureHunter.Contract.csproj", "{EE650280-11E0-4A5F-B688-57979CC17622}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -70,18 +70,6 @@ Global
 		{C0970AC9-05CF-4CF7-B527-BAAD00277407}.Test|Any CPU.Build.0 = Release|Any CPU
 		{C0970AC9-05CF-4CF7-B527-BAAD00277407}.Test|x64.ActiveCfg = Release|Any CPU
 		{C0970AC9-05CF-4CF7-B527-BAAD00277407}.Test|x64.Build.0 = Release|Any CPU
-		{591CF921-3027-4114-B062-2DADF4538F24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{591CF921-3027-4114-B062-2DADF4538F24}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{591CF921-3027-4114-B062-2DADF4538F24}.Debug|x64.ActiveCfg = Debug|x64
-		{591CF921-3027-4114-B062-2DADF4538F24}.Debug|x64.Build.0 = Debug|x64
-		{591CF921-3027-4114-B062-2DADF4538F24}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{591CF921-3027-4114-B062-2DADF4538F24}.Release|Any CPU.Build.0 = Release|Any CPU
-		{591CF921-3027-4114-B062-2DADF4538F24}.Release|x64.ActiveCfg = Release|x64
-		{591CF921-3027-4114-B062-2DADF4538F24}.Release|x64.Build.0 = Release|x64
-		{591CF921-3027-4114-B062-2DADF4538F24}.Test|Any CPU.ActiveCfg = Release|Any CPU
-		{591CF921-3027-4114-B062-2DADF4538F24}.Test|Any CPU.Build.0 = Release|Any CPU
-		{591CF921-3027-4114-B062-2DADF4538F24}.Test|x64.ActiveCfg = Release|Any CPU
-		{591CF921-3027-4114-B062-2DADF4538F24}.Test|x64.Build.0 = Release|Any CPU
 		{61FEE5E9-E0C0-4893-957E-A7F5FE2492F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{61FEE5E9-E0C0-4893-957E-A7F5FE2492F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{61FEE5E9-E0C0-4893-957E-A7F5FE2492F5}.Debug|x64.ActiveCfg = Debug|x64
@@ -106,6 +94,18 @@ Global
 		{5E7F26D9-EFF1-4FB6-B7AB-6FE909A0B59E}.Test|Any CPU.Build.0 = Release|Any CPU
 		{5E7F26D9-EFF1-4FB6-B7AB-6FE909A0B59E}.Test|x64.ActiveCfg = Release|Any CPU
 		{5E7F26D9-EFF1-4FB6-B7AB-6FE909A0B59E}.Test|x64.Build.0 = Release|Any CPU
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Debug|x64.ActiveCfg = Debug|x64
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Debug|x64.Build.0 = Debug|x64
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Release|x64.ActiveCfg = Release|x64
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Release|x64.Build.0 = Release|x64
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Test|Any CPU.ActiveCfg = Release|Any CPU
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Test|Any CPU.Build.0 = Release|Any CPU
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Test|x64.ActiveCfg = Release|Any CPU
+		{EE650280-11E0-4A5F-B688-57979CC17622}.Test|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
