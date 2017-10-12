@@ -107,7 +107,7 @@ namespace TreasureHunter.Service
             double price = Bot.Valuate(itemsTuple.Item1, itemsTuple.Item2);
             var transaction = Bot
                 .UpdateTradeOffer(new TradeOfferTransaction(offer.TradeOfferId), DataAccessActionType.Retrieve);
-            if (transaction == null)
+            if (transaction.Id == Guid.Empty)
             {
                 transaction = new TradeOfferTransaction(offer, TradeOfferTransactionState.New, price);
             }
