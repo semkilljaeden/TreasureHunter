@@ -29,23 +29,30 @@ namespace TreasureHunter.Service
         private readonly IActorRef _paymentActor;
         private readonly IActorRef _valuationActor;
         private readonly IActorRef _commandActor;
+        private readonly IActorRef _dataAccessActor;
         private ICancelable _cancelToken;
         private ICancelable _tradeOfferCancelToken;
-        private readonly IActorRef MySelf;
-        public BotActor(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor, IActorRef commandActor) :
+        private readonly IActorRef _mySelf;
+        public BotActor(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor, IActorRef commandActor, IActorRef dataAccessActor) :
             this(info, apiKey, creator, false, false)
         {
             _paymentActor = paymentActor;
             _valuationActor = valuationActor;
             _commandActor = commandActor;
+            _dataAccessActor = dataAccessActor;
             Receive<CommandMessage>(msg => RunCommand(msg));
             Receive<PaymentMessage>(msg => OnPaymentUpdate(msg));
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
-            MySelf = Self;
+            _mySelf = Self;
         }
         void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
         {
             Log.Error(e.Exception);
+        }
+
+        internal void CheckPendingTradeOffer(TradeOffer offer)
+        {
+            _dataAccessActor.Tell(new DataAccessMessage<TradeOffer>(offer, DataAccessType.CheckPendingTradeOffer));
         }
 
         private void RunCommand(CommandMessage commandMessage)
@@ -60,9 +67,9 @@ namespace TreasureHunter.Service
                     break;
             }
         }
-        public static Props Props(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor, IActorRef commandActor)
+        public static Props Props(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor, IActorRef commandActor, IActorRef dataAccessActor)
         {
-            return Akka.Actor.Props.Create(() => new BotActor(info, apiKey, creator, paymentActor, valuationActor, commandActor));
+            return Akka.Actor.Props.Create(() => new BotActor(info, apiKey, creator, paymentActor, valuationActor, commandActor, dataAccessActor));
         }
         #endregion
 
@@ -235,6 +242,7 @@ namespace TreasureHunter.Service
         public event EventHandler<SteamGuardRequiredEventArgs> OnSteamGuardRequired;
 
         /// <summary>
+        /// <summary>
         /// Starts the callback thread and connects to Steam via SteamKit2.
         /// </summary>
         /// <remarks>
@@ -382,7 +390,7 @@ namespace TreasureHunter.Service
                 Offer = offer,
                 Token = token,
                 Price = price
-            }, MySelf);
+            }, _mySelf);
         }
 
         public double Valuate(List<Schema.Item> myItems, List<Schema.Item> theirItems)

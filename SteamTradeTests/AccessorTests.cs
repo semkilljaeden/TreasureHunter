@@ -18,7 +18,7 @@ namespace TreasureHunter.DataAccess.Tests
             try
             {
                 var section = ConfigurationManager.GetSection("Couchbase");
-                new Accessor().Init();
+                new Accessor();
             }
             catch (Exception e)
             {

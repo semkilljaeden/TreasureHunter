@@ -9,6 +9,7 @@ using Akka.Util.Internal;
 using log4net;
 using TreasureHunter.SteamTrade;
 using TreasureHunter.Common;
+using TreasureHunter.DataAccess;
 using TreasureHunter.SteamTrade;
 
 namespace TreasureHunter.Service
@@ -30,7 +31,8 @@ namespace TreasureHunter.Service
             var paymentActor = _system.ActorOf(PaymentActor.Props(), "Payment");
             var valuationActor = _system.ActorOf(ValuationActor.Props(), "Valuation");
             var commander = _system.ActorOf(CommandActor.Props(actors), "Commander");
-            var routees = config.Bots.Select(bot => _system.ActorOf(BotActor.Props(bot, config.ApiKey, (x, y) => new CustomUserHandler(x, y), paymentActor, valuationActor, commander), bot.DisplayName)).ToList();
+            var dataAccessActor = _system.ActorOf(DataAccessActor.Props(actors), "DataAccess");
+            var routees = config.Bots.Select(bot => _system.ActorOf(BotActor.Props(bot, config.ApiKey, (x, y) => new CustomUserHandler(x, y), paymentActor, valuationActor, commander, dataAccessActor), bot.DisplayName)).ToList();
             actors.AddRange(routees);
             actors.Add(paymentActor);
             actors.Add(valuationActor);
@@ -48,7 +50,7 @@ namespace TreasureHunter.Service
             } while (true);
         }
 
-        private Configuration LoadConfig()
+        private static Configuration LoadConfig()
         {
             Configuration configObject = null;
             if (!System.IO.File.Exists("settings.json"))

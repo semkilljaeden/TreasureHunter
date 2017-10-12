@@ -48,6 +48,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -61,6 +64,7 @@
     <Compile Include="ActorCommandMessage.cs" />
     <Compile Include="Confirmation.cs" />
     <Compile Include="CommandMessage.cs" />
+    <Compile Include="DataAccessMessage.cs" />
     <Compile Include="PaymentMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScheduleMessage.cs" />
@@ -73,6 +77,10 @@
       <Project>{bda9a4a1-3b68-4f9e-be97-e2c11263b14b}</Project>
       <Name>TreasureHunter.SteamTrade</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
