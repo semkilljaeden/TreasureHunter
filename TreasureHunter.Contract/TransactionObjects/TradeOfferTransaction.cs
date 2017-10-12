@@ -41,23 +41,29 @@ namespace TreasureHunter.Contract.TransactionObjects
         /// </summary>
         /// <param name="transaction"></param>
         /// <param name="state"></param>
-        public TradeOfferTransaction(TradeOfferTransaction transaction, TradeOfferTransactionState state) :
-            this(transaction.Offer, state, transaction.Price)
+        public TradeOfferTransaction(TradeOfferTransaction transaction, TradeOfferTransactionState state) 
         {
             Id = transaction.Id;
+            PaidAmmount = transaction.PaidAmmount;
+            OfferState = transaction.OfferState;
+            Offer = transaction.Offer;
+            State = state;
+            Price = transaction.Price;
+            TradeOfferId = transaction.TradeOfferId;
         }
         /// <summary>
         /// Update Offer
         /// </summary>
         /// <param name="transaction"></param>
         /// <param name="offer"></param>
-        public TradeOfferTransaction(TradeOfferTransaction transaction, TradeOffer offer) :
-            this(transaction.Offer, transaction.State, transaction.Price)
+        public TradeOfferTransaction(TradeOfferTransaction transaction, TradeOffer offer)
         {
-            OfferState = transaction.OfferState;
             Id = transaction.Id;
-            TradeOfferId = offer.TradeOfferId;
+            PaidAmmount = transaction.PaidAmmount;
+            OfferState = offer.OfferState;
             Offer = offer;
+            Price = transaction.Price;
+            TradeOfferId = offer.TradeOfferId;
         }
 
         /// <summary>
@@ -66,10 +72,13 @@ namespace TreasureHunter.Contract.TransactionObjects
         /// <param name="tradeOfferId"></param>
         public TradeOfferTransaction(string tradeOfferId)
         {
+            Id = Guid.Empty;
+            PaidAmmount = default(double);
             OfferState = default(TradeOfferState);
             Offer = null;
-            Id = Guid.Empty;
+            Price = default(double);
             TradeOfferId = tradeOfferId;
+            State = default(TradeOfferTransactionState);
         }
         /// <summary>
         /// Retreive Transaction by ID
@@ -77,10 +86,13 @@ namespace TreasureHunter.Contract.TransactionObjects
         /// <param name="id"></param>
         public TradeOfferTransaction(Guid id)
         {
+            Id = id;
+            PaidAmmount = default(double);
             OfferState = default(TradeOfferState);
             Offer = null;
-            Id = id;
+            Price = default(double);
             TradeOfferId = null;
+            State = default(TradeOfferTransactionState);
         }
     }
 }
