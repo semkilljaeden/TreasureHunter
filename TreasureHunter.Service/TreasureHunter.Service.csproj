@@ -84,8 +84,6 @@
     <Compile Include="SteamGroups\CMsgGroupInviteAction.cs" />
     <Compile Include="SteamGroups\CMsgInviteUserToGroup.cs" />
     <Compile Include="SteamGuardRequiredEventArgs.cs" />
-    <Compile Include="SteamTradeDemoHandler.cs" />
-    <Compile Include="TradeOfferUserHandler.cs" />
     <Compile Include="UserHandler.cs" />
     <Compile Include="ValuationActor.cs" />
   </ItemGroup>
@@ -98,17 +96,17 @@
       <Project>{bda9a4a1-3b68-4f9e-be97-e2c11263b14b}</Project>
       <Name>TreasureHunter.SteamTrade</Name>
     </ProjectReference>
-    <ProjectReference Include="..\TreasureHunter.Account\TreasureHunter.Account.csproj">
-      <Project>{540260b7-82b8-498e-b5e5-69abe7a1bb1a}</Project>
-      <Name>TreasureHunter.Account</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\TreasureHunter.Common\TreasureHunter.Common.csproj">
+    <ProjectReference Include="..\TreasureHunter.Common\TreasureHunter.Contract.csproj">
       <Project>{591cf921-3027-4114-b062-2dadf4538f24}</Project>
-      <Name>TreasureHunter.Common</Name>
+      <Name>TreasureHunter.Contract</Name>
     </ProjectReference>
     <ProjectReference Include="..\TreasureHunter.DataAccess\TreasureHunter.DataAccess.csproj">
       <Project>{61fee5e9-e0c0-4893-957e-a7f5fe2492f5}</Project>
       <Name>TreasureHunter.DataAccess</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TreasureHunter.Transaction\TreasureHunter.Transaction.csproj">
+      <Project>{5e7f26d9-eff1-4fb6-b7ab-6fe909a0b59e}</Project>
+      <Name>TreasureHunter.Transaction</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

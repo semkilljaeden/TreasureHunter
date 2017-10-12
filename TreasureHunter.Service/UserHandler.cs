@@ -104,12 +104,6 @@ namespace TreasureHunter.Service
         /// </value>
         public bool IsAdmin => Bot.Admins.Contains(OtherSID);
         /// <summary>
-        /// Called when the SteamAuth is deactivated During TradeOffer Confirmation
-        /// </summary>
-        /// <param name="offer"></param>
-        /// <returns></returns>
-        public abstract bool OnAutoTradeConfirmationFail(TradeOffer offer);
-        /// <summary>
         /// Called when the bot is invited to a Steam group
         /// </summary>
         /// <returns>

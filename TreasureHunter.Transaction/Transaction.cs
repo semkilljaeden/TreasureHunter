@@ -6,5 +6,8 @@ using System.Threading.Tasks;
 
 namespace TreasureHunter.Transaction
 {
-
+    public class Transaction
+    {
+        public const string PaymentMethod = "";
+    }
 }

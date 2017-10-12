@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using TreasureHunter.SteamTrade;
 using TreasureHunter;
-using TreasureHunter.SteamTrade;
+using TreasureHunter.Common.TransactionObjects;
+using TreasureHunter.Transaction;
 using TreasureHunter.SteamTrade.TradeOffer;
 
 namespace TreasureHunter.Service
@@ -112,23 +113,19 @@ namespace TreasureHunter.Service
                 case TradeOfferState.TradeOfferStateInEscrow:
                     //Trade is still active but incomplete
                     Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} in Escow");
+                    OnTradeInEscow(offer);
                     break;
                 case TradeOfferState.TradeOfferStateCountered:
                     Log.Info($"Trade offer {offer.TradeOfferId} was countered");
-                    break;
+                    break;                
                 default:
                     Log.Info($"Trade offer {offer.TradeOfferId} failed because of {offer.OfferState}");
                     break;
             }
         }
 
-        public override bool OnAutoTradeConfirmationFail(TradeOffer offer)
-        {
-            SendChatMessage("Awaiting Bot to Confirm the Trade in Authenticator");
-            return true;
-        }
 
-        private void OnNewTradeOffer(TradeOffer offer)
+        private Tuple<List<Schema.Item>, List<Schema.Item>> GetItems(TradeOffer offer)
         {
             Bot.GetInventory();
             GetOtherInventory();
@@ -139,25 +136,70 @@ namespace TreasureHunter.Service
                 i => Schema.GetSchema().GetItem(myInventory.GetItem((ulong)i.AssetId).Defindex)).ToList();
             var theirItemsWithSchema = theirItems.Select(
                 i => Schema.GetSchema().GetItem(OtherInventory.GetItem((ulong)i.AssetId).Defindex)).ToList();
+            
+            return new Tuple<List<Schema.Item>, List<Schema.Item>>(myItemsWithSchema, theirItemsWithSchema);
+        }
+
+        private void OnTradeInEscow(TradeOffer offer)
+        {
+            
+        }
+        private void OnNewTradeOffer(TradeOffer offer)
+        {
+            var itemsTuple = GetItems(offer);
             var ourItemString = Environment.NewLine + string.Join(Environment.NewLine + "              ",
-                                      myItemsWithSchema.Select(i => i.ToString()));
+                                    itemsTuple.Item1.Select(i => i.ToString()));
             var theirItemString = Environment.NewLine + string.Join(Environment.NewLine + "              ",
-                                    theirItemsWithSchema.Select(i => i.ToString()));
+                                      itemsTuple.Item2.Select(i => i.ToString()));
+            Log.Info($"New Order Received from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} OrderId = " + offer.TradeOfferId);
             Log.Info("They want " + theirItemString);
             Log.Info("I will get " + ourItemString);
-            if(!string.IsNullOrEmpty(theirItemString))
+            Log.Info("Update the Offer...");           
+            double price = Bot.Valuate(itemsTuple.Item1, itemsTuple.Item2);
+            var pending = Bot
+                .UpdateTradeOffer(new TradeOfferTransaction(offer, TradeOfferTransactionState.New, price));
+            Log.Info($"{pending.Id} " +
+                     $"from {Bot.SteamFriends.GetFriendPersonaName(pending.Offer.PartnerSteamId)} " +
+                     $"State = {pending.State}, " +
+                     $"Price = {pending.Price}" +
+                     $"PaidAmmount = {pending.PaidAmmount}");
+            switch (pending.State)
             {
-                SendChatMessage($"You are selling " + theirItemString);
+                case TradeOfferTransactionState.New:
+                    Log.Info("New Trade Found");
+                    SendChatMessage($"Please pay SGD ${pending.Price} to {Transaction.Transaction.PaymentMethod} for Order {pending.Id}");
+                    Bot.EnqueueForPayment(pending);
+                    break;
+                case TradeOfferTransactionState.Paid:
+                case TradeOfferTransactionState.Completed:
+                    Log.Info($"Existing Trade, Paid completed {pending.Id}");
+                    Bot.PaymentNotifySelf(pending);
+                    break;
+                case TradeOfferTransactionState.PartialPaid:
+                    Log.Info($"Existing Trade, Partial Paid, Price = {pending.Price}, PaidAmmount = {pending.PaidAmmount} {pending.Id}");
+                    SendChatMessage(
+                        $"Please pay SGD ${pending.Price - pending.PaidAmmount} to {Transaction.Transaction.PaymentMethod} for Order {pending.Id}");
+                    break;
+                case TradeOfferTransactionState.UnPaid:
+                    Log.Info($"Existing Trade, UnPaid, Price = {pending.Price}, PaidAmmount = {pending.PaidAmmount} {pending.Id}");
+                    break;
+                case TradeOfferTransactionState.Expired:
+                    Log.Info($"Existing Trade, Trade Expired");
+                    SendChatMessage(
+                        $"Trade Expired for Order {pending.Id}");
+                    offer.Decline();
+                    Bot.UpdateTradeOffer(new TradeOfferTransaction(pending, TradeOfferTransactionState.Declined,
+                        pending.PaidAmmount));
+                    break;
+                case TradeOfferTransactionState.Declined:
+                    Log.Info($"Existing Trade, Trade Declined");
+                    SendChatMessage(
+                        $"Trade Declined by Bot for Order {pending.Id}");
+                    offer.Decline();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
-            if (!string.IsNullOrEmpty(ourItemString))
-            {
-                SendChatMessage($"You are buying " + ourItemString);
-            }
-            string token = Token.GenerateToken();
-            double price = Bot.Valuate(myItemsWithSchema, theirItemsWithSchema);
-            Log.Info($"{offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} has Token = {token}, Price = {price}");
-            SendChatMessage($"Please pay SGD ${price} and Include Token = {token} in the payment message");
-            Bot.EnqueueForPayment(offer, token, price);
         }
         public override void OnTradeAccept() 
         {
@@ -173,16 +215,6 @@ namespace TreasureHunter.Service
                     Log.Warn ("The trade might have failed, but we can't be sure.");
                 }
             }
-        }
-
-        private bool Validation(List<TradeOffer.TradeStatusUser.TradeAsset> myAssets, List<TradeOffer.TradeStatusUser.TradeAsset> theirAssets)
-        {
-            //compare items etc
-            if (myAssets.Count == theirAssets.Count)
-            {
-                return true;
-            }
-            return true;
         }
 
     }

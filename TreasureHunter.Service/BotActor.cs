@@ -17,6 +17,7 @@ using SteamKit2.Internal;
 using TreasureHunter.SteamTrade;
 using TreasureHunter.Service.SteamGroups;
 using TreasureHunter.Common;
+using TreasureHunter.Common.TransactionObjects;
 using TreasureHunter.SteamTrade;
 using TreasureHunter.SteamTrade.TradeOffer;
 
@@ -50,10 +51,14 @@ namespace TreasureHunter.Service
             Log.Error(e.Exception);
         }
 
-        internal void CheckPendingTradeOffer(TradeOffer offer)
+        internal TradeOfferTransaction UpdateTradeOffer(TradeOfferTransaction pendingOffer)
         {
-            _dataAccessActor.Tell(new DataAccessMessage<TradeOffer>(offer, DataAccessType.CheckPendingTradeOffer));
+            var dataAccessMsg = _dataAccessActor
+                .Ask<DataAccessMessage<TradeOfferTransaction>>(
+                new DataAccessMessage<TradeOfferTransaction>(pendingOffer, DataAccessActionType.UpdatePendingTradeOffer)).Result;
+            return dataAccessMsg.Content;
         }
+
 
         private void RunCommand(CommandMessage commandMessage)
         {
@@ -80,7 +85,7 @@ namespace TreasureHunter.Service
         private readonly string _schemaLang;
         private readonly Dictionary<SteamID, UserHandler> _userHandlers;
         private readonly UserHandlerCreator _createHandler;
-        private readonly CallbackManager _steamCallbackManager;
+
         #endregion
 
         #region Private variables
@@ -180,7 +185,7 @@ namespace TreasureHunter.Service
             }
         }
 
-        public CallbackManager SteamCallbackManager => _steamCallbackManager;
+        public CallbackManager SteamCallbackManager { get; }
 
 
         public BotActor(Configuration.BotInfo config, string apiKey, UserHandlerCreator handlerCreator, bool debug = false, bool process = false)
@@ -210,7 +215,7 @@ namespace TreasureHunter.Service
             Log.Debug("Initializing Steam Bot...");
             SteamClient = new SteamClient();
             SteamClient.AddHandler(new SteamNotifications());
-            _steamCallbackManager = new CallbackManager(SteamClient);
+            SteamCallbackManager = new CallbackManager(SteamClient);
             SubscribeSteamCallbacks();
             SteamTrade = SteamClient.GetHandler<SteamTrading>();
             SteamUser = SteamClient.GetHandler<SteamUser>();
@@ -241,7 +246,6 @@ namespace TreasureHunter.Service
         /// </remarks>
         public event EventHandler<SteamGuardRequiredEventArgs> OnSteamGuardRequired;
 
-        /// <summary>
         /// <summary>
         /// Starts the callback thread and connects to Steam via SteamKit2.
         /// </summary>
@@ -382,15 +386,20 @@ namespace TreasureHunter.Service
         {
             return _tradeOfferManager.TryGetOffer(offerId, out tradeOffer);
         }
+        #endregion
 
-        public void EnqueueForPayment(TradeOffer offer, string token, double price)
+        #region Payment
+
+        public void EnqueueForPayment(TradeOfferTransaction offer)
         {
-            _paymentActor.Tell(new PaymentMessage()
-            {
-                Offer = offer,
-                Token = token,
-                Price = price
-            }, _mySelf);
+            var transaction = new TradeOfferTransaction(offer, TradeOfferTransactionState.UnPaid, 0.0);
+            UpdateTradeOffer(transaction);
+            _paymentActor.Tell(transaction, _mySelf);
+        }
+
+        public void PaymentNotifySelf(TradeOfferTransaction transaction)
+        {
+            Self.Tell(new PaymentNotificationMessage(transaction.Id));
         }
 
         public double Valuate(List<Schema.Item> myItems, List<Schema.Item> theirItems)
@@ -429,6 +438,9 @@ namespace TreasureHunter.Service
                 }
             }
         }
+
+        #endregion
+
         bool HandleTradeSessionStart(SteamID other)
         {
             if (CurrentTrade != null)
@@ -1065,7 +1077,7 @@ namespace TreasureHunter.Service
         private void SubscribeSteamCallbacks()
         {
             #region Login
-            _steamCallbackManager.Subscribe<SteamClient.ConnectedCallback>(callback =>
+            SteamCallbackManager.Subscribe<SteamClient.ConnectedCallback>(callback =>
             {
                 Log.Debug($"Connection Callback: {callback.Result}");
 
@@ -1081,7 +1093,7 @@ namespace TreasureHunter.Service
 
             });
 
-            _steamCallbackManager.Subscribe<SteamUser.LoggedOnCallback>(callback =>
+            SteamCallbackManager.Subscribe<SteamUser.LoggedOnCallback>(callback =>
             {
                 Log.Debug($"Logged On Callback: {callback.Result}");
 
@@ -1142,7 +1154,7 @@ namespace TreasureHunter.Service
                 }
             });
 
-            _steamCallbackManager.Subscribe<SteamUser.LoginKeyCallback>(callback =>
+            SteamCallbackManager.Subscribe<SteamUser.LoginKeyCallback>(callback =>
             {
                 _myUniqueId = callback.UniqueID.ToString();
 
@@ -1163,7 +1175,7 @@ namespace TreasureHunter.Service
                 GetUserHandler(SteamClient.SteamID).OnLoginCompleted();
             });
 
-            _steamCallbackManager.Subscribe<SteamUser.WebAPIUserNonceCallback>(webCallback =>
+            SteamCallbackManager.Subscribe<SteamUser.WebAPIUserNonceCallback>(webCallback =>
             {
                 Log.Debug("Received new WebAPIUserNonce.");
 
@@ -1178,13 +1190,13 @@ namespace TreasureHunter.Service
                 }
             });
 
-            _steamCallbackManager.Subscribe<SteamUser.UpdateMachineAuthCallback>(
+            SteamCallbackManager.Subscribe<SteamUser.UpdateMachineAuthCallback>(
                 OnUpdateMachineAuthCallback
             );
             #endregion
 
             #region Friends
-            _steamCallbackManager.Subscribe<SteamFriends.FriendsListCallback>(callback =>
+            SteamCallbackManager.Subscribe<SteamFriends.FriendsListCallback>(callback =>
             {
                 foreach (SteamFriends.FriendsListCallback.Friend friend in callback.FriendList)
                 {
@@ -1237,7 +1249,7 @@ namespace TreasureHunter.Service
             });
 
 
-            _steamCallbackManager.Subscribe<SteamFriends.FriendMsgCallback>(callback =>
+            SteamCallbackManager.Subscribe<SteamFriends.FriendMsgCallback>(callback =>
             {
                 EChatEntryType type = callback.EntryType;
 
@@ -1251,14 +1263,14 @@ namespace TreasureHunter.Service
             #endregion
 
             #region Group Chat
-            _steamCallbackManager.Subscribe<SteamFriends.ChatMsgCallback>(callback =>
+            SteamCallbackManager.Subscribe<SteamFriends.ChatMsgCallback>(callback =>
             {
                 GetUserHandler(callback.ChatterID).OnChatRoomMessage(callback.ChatRoomID, callback.ChatterID, callback.Message);
             });
             #endregion
 
             #region Trading
-            _steamCallbackManager.Subscribe<SteamTrading.SessionStartCallback>(callback =>
+            SteamCallbackManager.Subscribe<SteamTrading.SessionStartCallback>(callback =>
             {
                 bool started = HandleTradeSessionStart(callback.OtherClient);
 
@@ -1268,7 +1280,7 @@ namespace TreasureHunter.Service
                     Log.Debug("SteamTrading.SessionStartCallback handled successfully. Trade Opened.");
             });
 
-            _steamCallbackManager.Subscribe<SteamTrading.TradeProposedCallback>(callback =>
+            SteamCallbackManager.Subscribe<SteamTrading.TradeProposedCallback>(callback =>
             {
                 if (CheckCookies() == false)
                 {
@@ -1315,7 +1327,7 @@ namespace TreasureHunter.Service
                     SteamTrade.RespondToTrade(callback.TradeID, false);
             });
 
-            _steamCallbackManager.Subscribe<SteamTrading.TradeResultCallback>(callback =>
+            SteamCallbackManager.Subscribe<SteamTrading.TradeResultCallback>(callback =>
             {
                 if (callback.Response == EEconTradeResponse.Accepted)
                 {
@@ -1334,14 +1346,14 @@ namespace TreasureHunter.Service
             #endregion
 
             #region Disconnect
-            _steamCallbackManager.Subscribe<SteamUser.LoggedOffCallback>(callback =>
+            SteamCallbackManager.Subscribe<SteamUser.LoggedOffCallback>(callback =>
             {
                 IsLoggedIn = false;
                 Log.Warn($"Logged off Steam.  Reason: {callback.Result}");
                 CancelTradeOfferPollingThread();
             });
 
-            _steamCallbackManager.Subscribe<SteamClient.DisconnectedCallback>(callback =>
+            SteamCallbackManager.Subscribe<SteamClient.DisconnectedCallback>(callback =>
             {
                 if (IsLoggedIn)
                 {
@@ -1356,7 +1368,7 @@ namespace TreasureHunter.Service
             #endregion
 
             #region Notifications
-            _steamCallbackManager.Subscribe<global::TreasureHunter.Service.SteamNotifications.CommentNotificationCallback>(callback =>
+            SteamCallbackManager.Subscribe<global::TreasureHunter.Service.SteamNotifications.CommentNotificationCallback>(callback =>
             {
                 //various types of comment notifications on profile/activity feed etc
                 //Log.Info("received CommentNotificationCallback");
