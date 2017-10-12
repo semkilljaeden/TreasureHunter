@@ -13,9 +13,8 @@ namespace TreasureHunter.Contract.TransactionObjects
     }
     public class TradeOfferTransaction
     {
-        public Guid Id { get; private set; }
         public TradeOffer Offer { get; private set; }
-        public string TradeOfferId { get; private set; }
+        public string Id { get; private set; }
         public TradeOfferTransactionState State { get; private set; }
         public TradeOfferState OfferState { get; private set; }
         public double Price { get; private set; }
@@ -33,8 +32,7 @@ namespace TreasureHunter.Contract.TransactionObjects
             State = state;
             Price = price;
             PaidAmmount = 0.0;
-            Id = Guid.NewGuid();
-            TradeOfferId = offer.TradeOfferId;
+            Id = offer.TradeOfferId;
         }
         /// <summary>
         /// Update Transaction State
@@ -44,43 +42,32 @@ namespace TreasureHunter.Contract.TransactionObjects
         public TradeOfferTransaction(TradeOfferTransaction transaction, TradeOfferTransactionState state) :
             this(transaction.Offer, state, transaction.Price)
         {
-            Id = transaction.Id;
+            PaidAmmount = transaction.PaidAmmount;
         }
         /// <summary>
         /// Update Offer
         /// </summary>
         /// <param name="transaction"></param>
         /// <param name="offer"></param>
-        public TradeOfferTransaction(TradeOfferTransaction transaction, TradeOffer offer) :
-            this(transaction.Offer, transaction.State, transaction.Price)
+        public TradeOfferTransaction(TradeOfferTransaction transaction, TradeOffer offer)
         {
-            OfferState = transaction.OfferState;
-            Id = transaction.Id;
-            TradeOfferId = offer.TradeOfferId;
+            OfferState = offer.OfferState;
+            Id = offer.TradeOfferId;
             Offer = offer;
+            PaidAmmount = transaction.PaidAmmount;
+            Price = transaction.Price;
+            State = transaction.State;
         }
 
         /// <summary>
         /// Retreive Transaction by Offer
         /// </summary>
-        /// <param name="tradeOfferId"></param>
-        public TradeOfferTransaction(string tradeOfferId)
-        {
-            OfferState = default(TradeOfferState);
-            Offer = null;
-            Id = Guid.Empty;
-            TradeOfferId = tradeOfferId;
-        }
-        /// <summary>
-        /// Retreive Transaction by ID
-        /// </summary>
         /// <param name="id"></param>
-        public TradeOfferTransaction(Guid id)
+        public TradeOfferTransaction(string id)
         {
             OfferState = default(TradeOfferState);
             Offer = null;
             Id = id;
-            TradeOfferId = null;
         }
     }
 }

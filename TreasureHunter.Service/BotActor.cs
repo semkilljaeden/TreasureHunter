@@ -418,7 +418,7 @@ namespace TreasureHunter.Service
         {
             var transaction = _dataAccessActor
                 .Ask<DataAccessMessage<TradeOfferTransaction>>(new DataAccessMessage<TradeOfferTransaction>(
-                    new TradeOfferTransaction(msg.PaymentId), DataAccessActionType.Retrieve))
+                    new TradeOfferTransaction(msg.TradeOfferId), DataAccessActionType.Retrieve))
                 .Result.Content;
 
             if (transaction == null)

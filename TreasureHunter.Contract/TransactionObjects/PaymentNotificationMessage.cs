@@ -4,11 +4,11 @@ namespace TreasureHunter.Contract.TransactionObjects
 {
     public class PaymentNotificationMessage
     {
-        public Guid PaymentId { get; private set; }
+        public string TradeOfferId { get; private set; }
 
-        public PaymentNotificationMessage(Guid id)
+        public PaymentNotificationMessage(string id)
         {
-            PaymentId = id;
+            TradeOfferId = id;
         }
     }
 }

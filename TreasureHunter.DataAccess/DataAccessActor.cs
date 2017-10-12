@@ -34,7 +34,7 @@ namespace TreasureHunter.DataAccess
 
         private string GetId(TradeOfferTransaction transaction)
         {
-            return Sender.Path + "_" + transaction.Id.ToString();
+            return Sender.Path + "_" + transaction.Id;
         }
         private void UpdateTradeOffer(TradeOfferTransaction transaction)
         {
@@ -59,22 +59,9 @@ namespace TreasureHunter.DataAccess
 
         private TradeOfferTransaction Retrieve(TradeOfferTransaction transaction)
         {
-            if (transaction.Id != Guid.Empty)
+            if (transaction.Id != null)
             {
-                var result = _bucket.GetDocument<Document<List<TradeOfferTransaction>>>(GetId(transaction));
-                if (result.Success)
-                {
-                    return result.Content.Content.Last();
-                }
-                else
-                {
-                    Log.Error("Cannot find");
-                    return null;
-                }
-            }
-            else if (transaction.TradeOfferId != null)
-            {
-                var result = _bucket.Query<Document<List<TradeOfferTransaction>>>($"select * from `TreasureHunter` where ttradeOfferId = '{transaction.TradeOfferId}'");
+                var result = _bucket.Query<Document<List<TradeOfferTransaction>>>($"select * from `TreasureHunter` where ttradeOfferId = '{transaction.Id}'");
                 if (result.Success)
                 {
                     return result.GetEnumerator().Current?.Content.Last();
