@@ -73,8 +73,6 @@
     <Compile Include="AkkaMessageObject\UserCommandMessage.cs" />
     <Compile Include="AkkaMessageObject\ValuationMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TransactionObjects\PaymentNotificationMessage.cs" />
-    <Compile Include="TransactionObjects\TradeOfferTransaction.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SteamTrade\TreasureHunter.SteamTrade.csproj">

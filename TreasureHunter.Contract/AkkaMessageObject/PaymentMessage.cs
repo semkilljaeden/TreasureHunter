@@ -11,7 +11,7 @@ namespace TreasureHunter.Contract.AkkaMessageObject
         public PaymentMessage(Guid transactionId, double paidAmmount, string buyer)
         {
             TransactionId = transactionId;
-            PaidAmmount = PaidAmmount;
+            PaidAmmount = paidAmmount;
             Buyer = buyer;
         }
     }

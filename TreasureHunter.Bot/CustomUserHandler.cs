@@ -1,13 +1,13 @@
-using System;
 using SteamKit2;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using TreasureHunter.Bot.TransactionObjects;
 using TreasureHunter.Contract.AkkaMessageObject;
-using TreasureHunter.Contract.TransactionObjects;
 using TreasureHunter.SteamTrade;
 using TreasureHunter.SteamTrade.TradeOffer;
 
-namespace TreasureHunter.Service
+namespace TreasureHunter.Bot
 {
     public class CustomUserHandler : UserHandler
     {
@@ -100,41 +100,46 @@ namespace TreasureHunter.Service
                                     itemsTuple.Item1.Select(i => i.ToString()));
             var theirItemString = Environment.NewLine + string.Join(Environment.NewLine + "              ",
                                       itemsTuple.Item2.Select(i => i.ToString()));
-            Log.Info($"New Order Received from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} OrderId = " + offer.TradeOfferId);
-            Log.Info("They want " + theirItemString);
-            Log.Info("I will get " + ourItemString);
-            Log.Info("Update the Offer...");
+            Log.Info($"Order Update from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} OrderId = " + offer.TradeOfferId);
+            Log.Info("They want " + ourItemString);
+            Log.Info("I will get " + theirItemString);
             double price = Bot.Valuate(itemsTuple.Item1, itemsTuple.Item2);
             var transaction = Bot
                 .UpdateTradeOffer(new TradeOfferTransaction(offer.TradeOfferId), DataAccessActionType.Retrieve);
-            if (transaction.Id == Guid.Empty)
+            var oldTransaction = transaction;
+            if (transaction == null)
             {
-                transaction = new TradeOfferTransaction(offer, TradeOfferTransactionState.New, price);
+                transaction = new TradeOfferTransaction(offer, TradeOfferTransactionState.New, price, Bot);
             }
             else
             {
                 transaction = new TradeOfferTransaction(transaction, offer);
             }
-            Log.Info($"{transaction.Id} " + Environment.NewLine + 
+            Log.Info(Environment.NewLine + $"{transaction.Id} " + Environment.NewLine + 
                      $"from {Bot.SteamFriends.GetFriendPersonaName(transaction.Offer.PartnerSteamId)} " + Environment.NewLine +
-                     $"State = {transaction.State}, " + Environment.NewLine +
+                     $"OfferState = {transaction.OfferState}, " + Environment.NewLine +
                      $"Price = {transaction.Price}" + Environment.NewLine +
                      $"PaidAmmount = {transaction.PaidAmmount}" + Environment.NewLine + 
                      $"Transaction State = {transaction.State}");
-            if (offer.OfferState != transaction.OfferState)
+            if (oldTransaction?.State == transaction.State && oldTransaction?.OfferState == transaction.OfferState)
             {
-                Log.Info("New TradeOffer State:" + offer.OfferState);
-                Log.Info("TradeOffer in Database State:" + transaction.OfferState);
+                Log.Info("Incoming TradeOffer is not updated, Skip");
+                return;
             }
-            Bot
-                .UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
             switch (offer.OfferState)
             {
                 case TradeOfferState.TradeOfferStateAccepted:
                     Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} has been completed!");
+                    transaction = new TradeOfferTransaction(transaction, TradeOfferTransactionState.Completed);
                     SendChatMessage("Trade completed, thank you!");
-                    break;
+                    Log.Info("Update the Offer...");
+                    Bot
+                        .UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
+                    return;
                 case TradeOfferState.TradeOfferStateActive:
+                    Log.Info("Update the Offer...");
+                    Bot
+                        .UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
                     if (!offer.IsOurOffer)
                     {
                         switch (transaction.State)
@@ -151,7 +156,7 @@ namespace TreasureHunter.Service
                                     SendChatMessage(
                                         $"WARNING!!!!! You are under Trade escowDuration and the items you buying will be hold by steam for {escowDuration.DaysMyEscrow}, if you don't want to proceed please cancel the tradeoffer and do not pay");
                                 }
-                                SendChatMessage($"Please pay SGD ${transaction.Price} to {Transaction.Transaction.PaymentMethod} for Order {transaction.Id}");
+                                SendChatMessage($"Please pay SGD ${transaction.Price} to {"Kiljaeden"} for Order {transaction.Id}");
                                 break;
                             case TradeOfferTransactionState.Paid:
                             case TradeOfferTransactionState.Completed:
@@ -161,7 +166,7 @@ namespace TreasureHunter.Service
                             case TradeOfferTransactionState.PartialPaid:
                                 Log.Info($"Existing Trade, Partial Paid, Price = {transaction.Price}, PaidAmmount = {transaction.PaidAmmount} {transaction.Id}");
                                 SendChatMessage(
-                                    $"Please pay SGD ${transaction.Price - transaction.PaidAmmount} to {Transaction.Transaction.PaymentMethod} for Order {transaction.Id}");
+                                    $"Please pay SGD ${transaction.Price - transaction.PaidAmmount} to {"Kiljaeden"} for Order {transaction.Id}");
                                 break;
                             case TradeOfferTransactionState.Expired:
                                 Log.Info($"Existing Trade, Transaction Expired");
@@ -175,6 +180,9 @@ namespace TreasureHunter.Service
                     }
                     break;
                 case TradeOfferState.TradeOfferStateNeedsConfirmation:
+                    Log.Info("Update the Offer...");
+                    Bot
+                        .UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
                     Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} Needs {(offer.IsOurOffer ? "bot" : offer.TradeOfferId)} Confirmation");                    
                     switch (transaction.State)
                     {
@@ -192,6 +200,9 @@ namespace TreasureHunter.Service
                     }
                     break;
                 case TradeOfferState.TradeOfferStateInEscrow:
+                    Log.Info("Update the Offer...");
+                    Bot
+                        .UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
                     Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} in Escow");                    
                     switch (transaction.State)
                     {
@@ -210,6 +221,9 @@ namespace TreasureHunter.Service
                     
                     break;
                 case TradeOfferState.TradeOfferStateCountered:
+                    Log.Info("Update the Offer...");
+                    Bot
+                        .UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
                     Log.Info($"Trade offer {offer.TradeOfferId} was countered by " + (offer.IsOurOffer ? "bot" : Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)));
                     break;
                 case TradeOfferState.TradeOfferStateInvalid:
@@ -219,6 +233,9 @@ namespace TreasureHunter.Service
                 case TradeOfferState.TradeOfferStateInvalidItems:
                 case TradeOfferState.TradeOfferStateCanceledBySecondFactor:
                 case TradeOfferState.TradeOfferStateUnknown:
+                    Log.Info("Update the Offer...");
+                    Bot
+                        .UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
                     Log.Info($"Trade offer {offer.TradeOfferId} failed because of {offer.OfferState}");                   
                     switch (transaction.State)
                     {
@@ -237,6 +254,9 @@ namespace TreasureHunter.Service
                     }
                     break;
             }
+            Log.Info("Update the Offer...");
+            Bot
+                .UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
         }
 
 

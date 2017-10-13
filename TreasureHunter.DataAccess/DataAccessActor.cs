@@ -14,7 +14,7 @@ using TreasureHunter;
 using TreasureHunter.SteamTrade.TradeOffer;
 using log4net;
 using TreasureHunter.Contract.AkkaMessageObject;
-using TreasureHunter.Contract.TransactionObjects;
+using TreasureHunter.Bot.TransactionObjects;
 
 namespace TreasureHunter.DataAccess
 {
@@ -32,21 +32,14 @@ namespace TreasureHunter.DataAccess
             Receive<DataAccessMessage<TradeOfferTransaction>>(msg => PersistTradeOffer(msg));
         }
 
-        private string GetId(TradeOfferTransaction transaction)
-        {
-            return Sender.Path + "_" + transaction.Id.ToString();
-        }
         private TradeOfferTransaction UpdateTradeOffer(TradeOfferTransaction transaction)
         {
             try
-            {
-                var document = _bucket.GetDocument<List<TradeOfferTransaction>>(GetId(transaction));                
-                var transactionList = document?.Content ?? new List<TradeOfferTransaction>();
-                transactionList.Add(transaction);
+            {           
                 var doc = new Document<dynamic>
                 {
-                    Id = GetId(transaction),
-                    Content = transactionList,
+                    Id = Guid.NewGuid().ToString(),
+                    Content = transaction,
                 };
                 var r = _bucket.Upsert(doc);
                 if (r.Success)
@@ -72,10 +65,12 @@ namespace TreasureHunter.DataAccess
             {
                 if (transaction.Id != Guid.Empty)
                 {
-                    var result = _bucket.GetDocument<List<TradeOfferTransaction>>(GetId(transaction));
+                    var result =
+                        _bucket.Query<TradeOfferTransaction>(
+                            $"select id, offer, offerState, paidAmmount, price, state, timeStamp, tradeOfferId, buyer, botPath from `TreasureHunter` where id = '{transaction.Id}';");
                     if (result.Success)
                     {
-                        resultList = result.Content;
+                        resultList = result.Rows;
                     }
                     else
                     {
@@ -85,7 +80,7 @@ namespace TreasureHunter.DataAccess
                 }
                 else if (transaction.TradeOfferId != null)
                 {
-                    var result = _bucket.Query<TradeOfferTransaction>($"select i.id, i.offer, i.offerState, i.paidAmmount, i.price, i.state, i.timeStamp, i.tradeOfferId from `TreasureHunter`as list unnest list as i where i.tradeOfferId = '{transaction.TradeOfferId}';");
+                    var result = _bucket.Query<TradeOfferTransaction>($"select id, offer, offerState, paidAmmount, price, state, timeStamp, tradeOfferId, buyer， botPath from `TreasureHunter` where tradeOfferId = '{transaction.TradeOfferId}';");
                     if (result.Success)
                     {
                         resultList = result.Rows;
@@ -111,7 +106,7 @@ namespace TreasureHunter.DataAccess
             {
                 case DataAccessActionType.UpdateTradeOffer:
                     Sender.Tell(new DataAccessMessage<TradeOfferTransaction>(UpdateTradeOffer(doc.Content),
-                        DataAccessActionType.Retrieve));
+                        DataAccessActionType.UpdateTradeOffer));
                     break;
                 case DataAccessActionType.Retrieve:
                     Sender.Tell(new DataAccessMessage<TradeOfferTransaction>(Retrieve(doc.Content),

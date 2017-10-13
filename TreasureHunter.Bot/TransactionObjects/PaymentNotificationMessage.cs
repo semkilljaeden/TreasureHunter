@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TreasureHunter.Contract.TransactionObjects
+namespace TreasureHunter.Bot.TransactionObjects
 {
     public class PaymentNotificationMessage
     {

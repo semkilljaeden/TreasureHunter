@@ -7,6 +7,7 @@ using Akka.Actor;
 using Akka.Routing;
 using Akka.Util.Internal;
 using log4net;
+using TreasureHunter.Bot;
 using TreasureHunter.Contract.AkkaMessageObject;
 using TreasureHunter.SteamTrade;
 using TreasureHunter.DataAccess;

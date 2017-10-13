@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Akka.Actor;
 using log4net;
 using TreasureHunter.Contract.AkkaMessageObject;
-using TreasureHunter.Contract.TransactionObjects;
+using TreasureHunter.Bot.TransactionObjects;
 
 namespace TreasureHunter.Transaction
 {
@@ -43,13 +44,18 @@ namespace TreasureHunter.Transaction
                     transaction = new TradeOfferTransaction(msg);
                     Log.Warn($"No transaction id = {msg.TransactionId} found in the Database! Needs support");
                 }
+                var result = _dataAccess.Ask<DataAccessMessage<TradeOfferTransaction>>(new DataAccessMessage<TradeOfferTransaction>(transaction, DataAccessActionType.UpdateTradeOffer)).Result;
+                if (transaction.State == TradeOfferTransactionState.Completed)
+                {
+                    Log.Info($"Transaction {transaction.Id} has been completed already, user paid extra ammount Price = {transaction.Price}, Paid ammount = {transaction.PaidAmmount}");
+                }
+                _bots.FirstOrDefault(b => b.Path.Name == transaction.BotPath)?.Tell(new PaymentNotificationMessage(msg.TransactionId));
             }
             catch (Exception e)
             {
                 Log.Error(e);
             }
-            _dataAccess.Ask<DataAccessMessage<TradeOfferTransaction>> (new DataAccessMessage<TradeOfferTransaction>(transaction, DataAccessActionType.UpdateTradeOffer));
-            _bots.ForEach(bot => bot.Tell(new PaymentNotificationMessage(msg.TransactionId)));
+
         }
     }
 }

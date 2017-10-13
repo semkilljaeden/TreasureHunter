@@ -164,7 +164,7 @@ namespace TreasureHunter.Service
             catch (Exception e)
             {
                 // Print error
-                Log.Error("Error: Bot " + cs[0] + " not found.");
+                Log.Error("Error: Bot " + cs[0] + " not found.", e);
                 throw;
             }
 
@@ -196,7 +196,7 @@ namespace TreasureHunter.Service
             catch (Exception e)
             {
                 // Print error
-                Log.Error("Error: Bot " + cs[0] + " not found.");
+                Log.Error("Error: Bot " + cs[0] + " not found.", e);
                 throw;
             }
 

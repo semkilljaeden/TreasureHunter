@@ -56,5 +56,6 @@
   "offerState": 2,
   "price": 0,
   "paidAmmount": 0,
-  "timeStamp": "2017-10-13T08:18:28.8378171Z"
+  "timeStamp": "2017-10-13T08:18:28.8378171Z",
+  "buyer":  "" 
 }

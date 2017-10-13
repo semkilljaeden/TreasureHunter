@@ -1,27 +1,26 @@
-﻿using System;
+﻿using Akka.Actor;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Akka.Actor;
 using log4net;
 using SteamKit2;
+using SteamKit2.GC.Dota.Internal;
 using SteamKit2.Internal;
+using TreasureHunter.Bot.SteamGroups;
+using TreasureHunter.Bot.TransactionObjects;
+using TreasureHunter.Service;
 using TreasureHunter.SteamTrade;
-using TreasureHunter.Service.SteamGroups;
 using TreasureHunter.SteamTrade.TradeOffer;
-using TreasureHunter.Contract;
 using TreasureHunter.Contract.AkkaMessageObject;
-using TreasureHunter.Contract.TransactionObjects;
-
-namespace TreasureHunter.Service
+namespace TreasureHunter.Bot
 {
     public class BotActor : ReceiveActor
     {
@@ -31,6 +30,7 @@ namespace TreasureHunter.Service
         private readonly IActorRef _commandActor;
         private readonly IActorRef _dataAccessActor;
         private readonly IActorRef _mySelf;
+        public string BotName => _mySelf.Path.Name;
         public BotActor(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef valuationActor, IActorRef commandActor, IActorRef dataAccessActor) :
             this(info, apiKey, creator, false, false)
         {
@@ -42,7 +42,8 @@ namespace TreasureHunter.Service
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             _mySelf = Self;
         }
-        void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+
+        static void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
         {
             Log.Error(e.Exception);
         }
@@ -51,15 +52,21 @@ namespace TreasureHunter.Service
         {
             if (type == DataAccessActionType.UpdateTradeOffer)
             {
-                _dataAccessActor
-                    .Tell(
-                        new DataAccessMessage<TradeOfferTransaction>(pendingOffer, type));
-                return null;
+                return _dataAccessActor
+                    .Ask<DataAccessMessage<TradeOfferTransaction>>(
+                        new DataAccessMessage<TradeOfferTransaction>(pendingOffer, type)).Result.Content;
             }
             var dataAccessMsg = _dataAccessActor
                 .Ask<DataAccessMessage<TradeOfferTransaction>>(
                 new DataAccessMessage<TradeOfferTransaction>(pendingOffer, type)).Result;
             return dataAccessMsg.Content;
+        }
+
+        internal Task<DataAccessMessage<TradeOfferTransaction>> UpdateTradeOfferAsync(TradeOfferTransaction pendingOffer, DataAccessActionType type)
+        {
+            return _dataAccessActor
+                .Ask<DataAccessMessage<TradeOfferTransaction>>(
+                    new DataAccessMessage<TradeOfferTransaction>(pendingOffer, type));
         }
 
 
@@ -400,7 +407,7 @@ namespace TreasureHunter.Service
 
         public void PaymentNotifySelf(TradeOfferTransaction transaction)
         {
-            Self.Tell(new PaymentNotificationMessage(transaction.Id));
+            Self.Tell(new PaymentNotificationMessage(transaction.Id), _mySelf);
         }
 
         public double Valuate(List<Schema.Item> myItems, List<Schema.Item> theirItems)
@@ -445,7 +452,15 @@ namespace TreasureHunter.Service
                     else
                     {
                         //GetUserHandler(msg.Offer.PartnerSteamId).OnAutoTradeConfirmationFail(msg.Offer);
-                        Log.Info($"Waiting Manual Trade Confirmation On TradeOffer {transaction.Id}");
+                        if (transaction.Offer.Items.GetMyItems().Count < 1)
+                        {
+                            Log.Info($"We are not offering any items, no need trade confirmation On TradeOffer {transaction.Id} ");
+                        }
+                        else
+                        {
+                            Log.Info($"Waiting Manual Trade Confirmation On TradeOffer {transaction.Id}");
+                        }
+                        
                     }
 
                 }
@@ -510,7 +525,7 @@ namespace TreasureHunter.Service
 
         string GetMobileAuthCode()
         {
-            var authFile = Path.Combine("authfiles", String.Format("{0}.auth", _logOnDetails.Username));
+            var authFile = Path.Combine("authfiles", $"{_logOnDetails.Username}.auth");
             if (File.Exists(authFile))
             {
                 SteamGuardAccount = Newtonsoft.Json.JsonConvert.DeserializeObject<SteamAuth.SteamGuardAccount>(File.ReadAllText(authFile));
@@ -603,7 +618,7 @@ namespace TreasureHunter.Service
             // get sentry file which has the machine hw info saved 
             // from when a steam guard code was entered
             Directory.CreateDirectory(System.IO.Path.Combine(System.Windows.Forms.Application.StartupPath, "sentryfiles"));
-            FileInfo fi = new FileInfo(System.IO.Path.Combine("sentryfiles", String.Format("{0}.sentryfile", _logOnDetails.Username)));
+            FileInfo fi = new FileInfo(System.IO.Path.Combine("sentryfiles", $"{_logOnDetails.Username}.sentryfile"));
 
             if (fi.Exists && fi.Length > 0)
                 _logOnDetails.SentryFileHash = SHAHash(File.ReadAllBytes(fi.FullName));
@@ -933,11 +948,14 @@ namespace TreasureHunter.Service
         public string WaitForInput(string message)
         {
             string input;
+            int seconds = 20;
             _commandActor.Tell(new ActorCommandMessage()
             {
-                Text = message
-            });
-            while (!_threadCommunicator.TryDequeue(out input))
+                Text = message + $" You have {seconds} seconds to enter the value"
+            }, _mySelf);
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            while (!_threadCommunicator.TryDequeue(out input) && stopwatch.Elapsed < TimeSpan.FromSeconds(seconds))
             {
                 
             }
@@ -1382,7 +1400,7 @@ namespace TreasureHunter.Service
             #endregion
 
             #region Notifications
-            SteamCallbackManager.Subscribe<global::TreasureHunter.Service.SteamNotifications.CommentNotificationCallback>(callback =>
+            SteamCallbackManager.Subscribe<global::TreasureHunter.Bot.SteamNotifications.CommentNotificationCallback>(callback =>
             {
                 //various types of comment notifications on profile/activity feed etc
                 //Log.Info("received CommentNotificationCallback");

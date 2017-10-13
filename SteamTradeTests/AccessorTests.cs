@@ -11,7 +11,7 @@ using Akka.Actor;
 using Akka.TestKit.NUnit3;
 using Newtonsoft.Json;
 using TreasureHunter.Contract.AkkaMessageObject;
-using TreasureHunter.Contract.TransactionObjects;
+using TreasureHunter.Bot.TransactionObjects;
 
 namespace TreasureHunter.DataAccess.Tests
 {
@@ -25,7 +25,7 @@ namespace TreasureHunter.DataAccess.Tests
             var json = File.ReadAllText("json/tradeOfferTransaction.json");
             var transaction = JsonConvert.DeserializeObject<TradeOfferTransaction>(json);            
             dataAccessor.Tell(new DataAccessMessage<TradeOfferTransaction>(transaction, DataAccessActionType.UpdateTradeOffer));
-            ExpectNoMsg(TimeSpan.FromSeconds(50));
+            ExpectMsg<DataAccessMessage<TradeOfferTransaction>>(TimeSpan.FromSeconds(50));
         }
 
         [Test()]

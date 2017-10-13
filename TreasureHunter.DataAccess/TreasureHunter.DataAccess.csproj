@@ -101,6 +101,10 @@
       <Project>{bda9a4a1-3b68-4f9e-be97-e2c11263b14b}</Project>
       <Name>TreasureHunter.SteamTrade</Name>
     </ProjectReference>
+    <ProjectReference Include="..\TreasureHunter.Bot\TreasureHunter.Bot.csproj">
+      <Project>{6eb4f300-53ee-4f08-831f-55d4edd6806a}</Project>
+      <Name>TreasureHunter.Bot</Name>
+    </ProjectReference>
     <ProjectReference Include="..\TreasureHunter.Contract\TreasureHunter.Contract.csproj">
       <Project>{ee650280-11e0-4a5f-b688-57979cc17622}</Project>
       <Name>TreasureHunter.Contract</Name>

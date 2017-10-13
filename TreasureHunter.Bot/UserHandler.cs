@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Linq;
-using System.Security.AccessControl;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using log4net;
+using SteamAuth;
 using SteamKit2;
-using TreasureHunter.SteamTrade;
+using SteamKit2.GC.Dota.Internal;
 using TreasureHunter.SteamTrade;
 using TreasureHunter.SteamTrade.TradeOffer;
 
-namespace TreasureHunter.Service
+namespace TreasureHunter.Bot
 {
     /// <summary>
     /// The abstract base class for users of SteamBot that will allow a user
@@ -25,7 +23,7 @@ namespace TreasureHunter.Service
         private Task<Inventory> _otherInventoryTask;
         private TaskCompletionSource<string> _waitingOnUserResponse;
 
-        protected SteamWeb SteamWeb
+        protected SteamTrade.SteamWeb SteamWeb
         {
             get
             {

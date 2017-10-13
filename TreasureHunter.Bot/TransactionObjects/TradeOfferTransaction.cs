@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
+using Newtonsoft.Json;
 using TreasureHunter.Contract.AkkaMessageObject;
 using TreasureHunter.SteamTrade.TradeOffer;
 
-namespace TreasureHunter.Contract.TransactionObjects
+namespace TreasureHunter.Bot.TransactionObjects
 { 
     public enum TradeOfferTransactionState
     {
@@ -33,6 +33,8 @@ namespace TreasureHunter.Contract.TransactionObjects
         public DateTime TimeStamp { get; private set; }
         [JsonProperty]
         public string Buyer { get; private set; }
+        [JsonProperty]
+        public string BotPath { get; private set; }
         /// <summary>
         /// Json Deserialize Constructor
         /// </summary>
@@ -49,7 +51,7 @@ namespace TreasureHunter.Contract.TransactionObjects
         /// <param name="state"></param>
         /// <param name="price"></param>
         /// <param name="paidAmmount"></param>       
-        public TradeOfferTransaction(TradeOffer offer, TradeOfferTransactionState state, double price, double paidAmmount = 0.0)
+        public TradeOfferTransaction(TradeOffer offer, TradeOfferTransactionState state, double price, BotActor bot, double paidAmmount = 0.0)
         {
             OfferState = offer.OfferState;
             Offer = offer;
@@ -60,6 +62,7 @@ namespace TreasureHunter.Contract.TransactionObjects
             TradeOfferId = offer.TradeOfferId;
             TimeStamp = DateTime.UtcNow;
             Buyer = null;
+            BotPath = bot.BotName;
         }
         /// <summary>
         /// Update Transaction State
@@ -75,7 +78,9 @@ namespace TreasureHunter.Contract.TransactionObjects
             State = state;
             Price = transaction.Price;
             TradeOfferId = transaction.TradeOfferId;
-            Buyer = null;
+            Buyer = transaction.Buyer;
+            TimeStamp = DateTime.UtcNow;
+            BotPath = transaction.BotPath;
         }
         /// <summary>
         /// Update Offer
@@ -88,9 +93,12 @@ namespace TreasureHunter.Contract.TransactionObjects
             PaidAmmount = transaction.PaidAmmount;
             OfferState = offer.OfferState;
             Offer = offer;
+            State = transaction.State;
             Price = transaction.Price;
             TradeOfferId = offer.TradeOfferId;
-            Buyer = null;
+            Buyer = transaction.Buyer;
+            TimeStamp = DateTime.UtcNow;
+            BotPath = transaction.BotPath;
         }
 
         /// <summary>
@@ -107,6 +115,7 @@ namespace TreasureHunter.Contract.TransactionObjects
             TradeOfferId = tradeOfferId;
             State = default(TradeOfferTransactionState);
             Buyer = null;
+            BotPath = null;
         }
         /// <summary>
         /// Retreive Transaction by ID
@@ -122,6 +131,7 @@ namespace TreasureHunter.Contract.TransactionObjects
             TradeOfferId = null;
             State = default(TradeOfferTransactionState);
             Buyer = null;
+            BotPath = null;
         }
 
         /// <summary>
@@ -132,13 +142,15 @@ namespace TreasureHunter.Contract.TransactionObjects
         public TradeOfferTransaction(TradeOfferTransaction transaction, PaymentMessage msg)
         {
             Id = transaction.Id;
-            PaidAmmount = msg.PaidAmmount;
+            PaidAmmount += msg.PaidAmmount;
             OfferState = transaction.OfferState;
             Offer = transaction.Offer;
-            State = transaction.State;
             Price = transaction.Price;
+            State = PaidAmmount >= Price ? TradeOfferTransactionState.Paid : TradeOfferTransactionState.PartialPaid;
             TradeOfferId = transaction.TradeOfferId;
             Buyer = msg.Buyer;
+            TimeStamp = DateTime.UtcNow;
+            BotPath = transaction.BotPath;
         }
 
         /// <summary>
@@ -153,8 +165,10 @@ namespace TreasureHunter.Contract.TransactionObjects
             Offer = null;
             Price = default(double);
             TradeOfferId = null;
-            State = TradeOfferTransactionState.Paid;
+            State = TradeOfferTransactionState.PartialPaid;
             Buyer = msg.Buyer;
+            TimeStamp = DateTime.UtcNow;
+            BotPath = null;
         }
     }
 }
