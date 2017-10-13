@@ -71,12 +71,8 @@ namespace TreasureHunter.Service
                 Log.Error($"Cannot find Payment Service");
                 return;
             }
-            actor?.Tell(new CommandMessage()
-            {
-                Type = CommandMessage.MessageType.ReleaseItem,
-                MessageText = auth
-            });
-            Log.Info($"Release Trade with Token {auth}");
+            actor?.Tell(new PaymentMessage(new Guid(auth), 99999, "Administrator"));
+            Log.Info($"Release Trade with TransactionId {auth}");
 
         }
         void ShowHelp(string auth)

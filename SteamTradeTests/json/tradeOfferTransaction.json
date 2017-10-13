@@ -1,61 +1,60 @@
 ﻿{
-  "TreasureHunter": {
-    "id": "264245a2-a553-4c60-b0d6-d43e863c7f91",
-    "offer": {
-      "expirationTime": 1508786807,
-      "isFirstOffer": true,
-      "isOurOffer": false,
-      "items": {
-        "me": {
-          "assets": [
-            {
-              "amount": 1,
-              "appid": 570,
-              "assetid": "8028398832",
-              "contextid": 2
-            }
-          ],
-          "currency": [],
-          "ready": false
-        },
-        "newversion": false,
-        "them": {
-          "assets": [],
-          "currency": [],
-          "ready": false
-        },
-        "version": 1
-      },
-      "message": "",
-      "offerState": 2,
-      "partnerSteamId": {
-        "accountID": 120344634,
-        "accountInstance": 1,
-        "accountType": 1,
-        "accountUniverse": 1,
-        "isAnonAccount": false,
-        "isAnonGameServerAccount": false,
-        "isAnonUserAccount": false,
-        "isBlankAnonAccount": false,
-        "isChatAccount": false,
-        "isClanAccount": false,
-        "isConsoleUserAccount": false,
-        "isContentServerAccount": false,
-        "isGameServerAccount": false,
-        "isIndividualAccount": true,
-        "isLobby": false,
-        "isPersistentGameServerAccount": false,
-        "isValid": true
-      },
-      "session": {},
-      "timeCreated": 1507577207,
-      "timeUpdated": 1507577207,
-      "tradeOfferId": "2573218320"
+  "id": "98eaf8d2-8d66-4aa1-a5db-b547ae22333e",
+  "offer": {
+    "session": {},
+    "partnerSteamId": {
+      "isBlankAnonAccount": false,
+      "isGameServerAccount": false,
+      "isPersistentGameServerAccount": false,
+      "isAnonGameServerAccount": false,
+      "isContentServerAccount": false,
+      "isClanAccount": false,
+      "isChatAccount": false,
+      "isLobby": false,
+      "isIndividualAccount": true,
+      "isAnonAccount": false,
+      "isAnonUserAccount": false,
+      "isConsoleUserAccount": false,
+      "isValid": true,
+      "accountID": 120344634,
+      "accountInstance": 1,
+      "accountType": 1,
+      "accountUniverse": 1
     },
+    "items": {
+      "newversion": false,
+      "version": 1,
+      "me": {
+        "assets": [
+          {
+            "appid": 570,
+            "contextid": 2,
+            "amount": 1,
+            "assetid": "8028398832"
+          }
+        ],
+        "currency": [],
+        "ready": false
+      },
+      "them": {
+        "assets": [],
+        "currency": [],
+        "ready": false
+      }
+    },
+    "tradeOfferId": "2573218320",
     "offerState": 2,
-    "paidAmmount": 0,
-    "price": 0,
-    "state": 3,
-    "tradeOfferId": "2573218320"
-  }
+    "isOurOffer": false,
+    "timeCreated": 1507577207,
+    "expirationTime": 1508786807,
+    "timeUpdated": 1507577207,
+    "message": "",
+    "isFirstOffer": true
+  },
+  "tradeOfferId": "2573218320",
+  "state": 3,
+  "offerState": 2,
+  "price": 0,
+  "paidAmmount": 0,
+  "timeStamp": "2017-10-13T08:18:28.8378171Z"
 }

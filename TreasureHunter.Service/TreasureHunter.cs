@@ -27,12 +27,12 @@ namespace TreasureHunter.Service
                 return;
             }
             _system = ActorSystem.Create("TreasureHunter");
-            var actors = new List<IActorRef>();
-            var paymentActor = _system.ActorOf(PaymentActor.Props(), "Payment");
+            var actors = new List<IActorRef>();          
             var valuationActor = _system.ActorOf(ValuationActor.Props(), "Valuation");
             var commander = _system.ActorOf(CommandActor.Props(actors), "Commander");
             var dataAccessActor = _system.ActorOf(DataAccessActor.Props(actors), "DataAccess");
-            var routees = config.Bots.Select(bot => _system.ActorOf(BotActor.Props(bot, config.ApiKey, (x, y) => new CustomUserHandler(x, y), paymentActor, valuationActor, commander, dataAccessActor), bot.DisplayName)).ToList();
+            var paymentActor = _system.ActorOf(PaymentActor.Props(dataAccessActor, actors), "Payment");           
+            var routees = config.Bots.Select(bot => _system.ActorOf(BotActor.Props(bot, config.ApiKey, (x, y) => new CustomUserHandler(x, y), valuationActor, commander, dataAccessActor), bot.DisplayName)).ToList();
             actors.AddRange(routees);
             actors.Add(paymentActor);
             actors.Add(valuationActor);

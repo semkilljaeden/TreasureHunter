@@ -27,15 +27,13 @@ namespace TreasureHunter.Service
     {
         #region Akka
 
-        private readonly IActorRef _paymentActor;
         private readonly IActorRef _valuationActor;
         private readonly IActorRef _commandActor;
         private readonly IActorRef _dataAccessActor;
         private readonly IActorRef _mySelf;
-        public BotActor(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor, IActorRef commandActor, IActorRef dataAccessActor) :
+        public BotActor(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef valuationActor, IActorRef commandActor, IActorRef dataAccessActor) :
             this(info, apiKey, creator, false, false)
         {
-            _paymentActor = paymentActor;
             _valuationActor = valuationActor;
             _commandActor = commandActor;
             _dataAccessActor = dataAccessActor;
@@ -82,9 +80,9 @@ namespace TreasureHunter.Service
                     break;
             }
         }
-        public static Props Props(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef paymentActor, IActorRef valuationActor, IActorRef commandActor, IActorRef dataAccessActor)
+        public static Props Props(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef valuationActor, IActorRef commandActor, IActorRef dataAccessActor)
         {
-            return Akka.Actor.Props.Create(() => new BotActor(info, apiKey, creator, paymentActor, valuationActor, commandActor, dataAccessActor));
+            return Akka.Actor.Props.Create(() => new BotActor(info, apiKey, creator, valuationActor, commandActor, dataAccessActor));
         }
         #endregion
 

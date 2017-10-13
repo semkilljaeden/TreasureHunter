@@ -36,56 +36,73 @@ namespace TreasureHunter.DataAccess
         {
             return Sender.Path + "_" + transaction.Id.ToString();
         }
-        private void UpdateTradeOffer(TradeOfferTransaction transaction)
+        private TradeOfferTransaction UpdateTradeOffer(TradeOfferTransaction transaction)
         {
-            var result = _bucket.GetDocument<Document<List<TradeOfferTransaction>>>(GetId(transaction));
-            var transactionList = result.Content?.Content ?? new List<TradeOfferTransaction>();
-            transactionList.Add(transaction);
-            var doc = new Document<dynamic>
+            try
             {
-                Id = GetId(transaction),
-                Content = transactionList,
-            };
-            var r = _bucket.Insert(doc);
-            if (r.Success)
-            {
-                Log.Info("Trade Offer Persisted");
+                var document = _bucket.GetDocument<List<TradeOfferTransaction>>(GetId(transaction));                
+                var transactionList = document?.Content ?? new List<TradeOfferTransaction>();
+                transactionList.Add(transaction);
+                var doc = new Document<dynamic>
+                {
+                    Id = GetId(transaction),
+                    Content = transactionList,
+                };
+                var r = _bucket.Upsert(doc);
+                if (r.Success)
+                {
+                    Log.Info("Trade Offer Persisted");
+                }
+                else
+                {
+                    Log.Error("Error in persisting TradeOffer");
+                }
             }
-            else
+            catch (Exception e)
             {
-                Log.Error("Error in persisting TradeOffer");
+                Log.Error(e);
             }
+            return transaction;
         }
 
         private TradeOfferTransaction Retrieve(TradeOfferTransaction transaction)
         {
-            if (transaction.Id != Guid.Empty)
+            List<TradeOfferTransaction> resultList = null;
+            try
             {
-                var result = _bucket.GetDocument<Document<List<TradeOfferTransaction>>>(GetId(transaction));
-                if (result.Success)
+                if (transaction.Id != Guid.Empty)
                 {
-                    return result.Content.Content.Last();
+                    var result = _bucket.GetDocument<List<TradeOfferTransaction>>(GetId(transaction));
+                    if (result.Success)
+                    {
+                        resultList = result.Content;
+                    }
+                    else
+                    {
+                        Log.Error("Cannot find");
+                        return null;
+                    }
                 }
-                else
+                else if (transaction.TradeOfferId != null)
                 {
-                    Log.Error("Cannot find");
-                    return null;
+                    var result = _bucket.Query<TradeOfferTransaction>($"select i.id, i.offer, i.offerState, i.paidAmmount, i.price, i.state, i.timeStamp, i.tradeOfferId from `TreasureHunter`as list unnest list as i where i.tradeOfferId = '{transaction.TradeOfferId}';");
+                    if (result.Success)
+                    {
+                        resultList = result.Rows;
+                    }
+                    else
+                    {
+                        Log.Error("Cannot find");
+                        return null;
+                    }
                 }
             }
-            else if (transaction.TradeOfferId != null)
+            catch (Exception e)
             {
-                var result = _bucket.Query<Document<List<TradeOfferTransaction>>>($"select * from `TreasureHunter` where ttradeOfferId = '{transaction.TradeOfferId}'");
-                if (result.Success)
-                {
-                    return result.GetEnumerator().Current?.Content.Last();
-                }
-                else
-                {
-                    Log.Error("Cannot find");
-                    return null;
-                }
+                Log.Error(e); ;
+                return null;
             }
-            return null;
+            return resultList?.OrderBy(t => t.TimeStamp)?.LastOrDefault();
         }
 
         private void PersistTradeOffer(DataAccessMessage<TradeOfferTransaction> doc)
@@ -93,14 +110,13 @@ namespace TreasureHunter.DataAccess
             switch (doc.ActionType)
             {
                 case DataAccessActionType.UpdateTradeOffer:
-                    UpdateTradeOffer(doc.Content);
+                    Sender.Tell(new DataAccessMessage<TradeOfferTransaction>(UpdateTradeOffer(doc.Content),
+                        DataAccessActionType.Retrieve));
                     break;
                 case DataAccessActionType.Retrieve:
                     Sender.Tell(new DataAccessMessage<TradeOfferTransaction>(Retrieve(doc.Content),
                         DataAccessActionType.Retrieve));
                     break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
         }
 

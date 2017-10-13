@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
+using TreasureHunter.Contract.AkkaMessageObject;
 using TreasureHunter.SteamTrade.TradeOffer;
 
 namespace TreasureHunter.Contract.TransactionObjects
@@ -9,32 +11,55 @@ namespace TreasureHunter.Contract.TransactionObjects
         Paid,
         PartialPaid,
         Completed,
-        Expired
+        Expired,
     }
     public class TradeOfferTransaction
     {
+        [JsonProperty]
         public Guid Id { get; private set; }
+        [JsonProperty]
         public TradeOffer Offer { get; private set; }
+        [JsonProperty]
         public string TradeOfferId { get; private set; }
+        [JsonProperty]
         public TradeOfferTransactionState State { get; private set; }
+        [JsonProperty]
         public TradeOfferState OfferState { get; private set; }
+        [JsonProperty]
         public double Price { get; private set; }
+        [JsonProperty]
         public double PaidAmmount { get; private set; }
+        [JsonProperty]
+        public DateTime TimeStamp { get; private set; }
+        [JsonProperty]
+        public string Buyer { get; private set; }
+        /// <summary>
+        /// Json Deserialize Constructor
+        /// </summary>
+        [JsonConstructor]
+        public TradeOfferTransaction()
+        {
+            
+        }
+
         /// <summary>
         /// New Transaction
         /// </summary>
         /// <param name="offer"></param>
         /// <param name="state"></param>
         /// <param name="price"></param>
-        public TradeOfferTransaction(TradeOffer offer, TradeOfferTransactionState state, double price)
+        /// <param name="paidAmmount"></param>       
+        public TradeOfferTransaction(TradeOffer offer, TradeOfferTransactionState state, double price, double paidAmmount = 0.0)
         {
             OfferState = offer.OfferState;
             Offer = offer;
             State = state;
             Price = price;
-            PaidAmmount = 0.0;
+            PaidAmmount = paidAmmount;
             Id = Guid.NewGuid();
             TradeOfferId = offer.TradeOfferId;
+            TimeStamp = DateTime.UtcNow;
+            Buyer = null;
         }
         /// <summary>
         /// Update Transaction State
@@ -50,6 +75,7 @@ namespace TreasureHunter.Contract.TransactionObjects
             State = state;
             Price = transaction.Price;
             TradeOfferId = transaction.TradeOfferId;
+            Buyer = null;
         }
         /// <summary>
         /// Update Offer
@@ -64,6 +90,7 @@ namespace TreasureHunter.Contract.TransactionObjects
             Offer = offer;
             Price = transaction.Price;
             TradeOfferId = offer.TradeOfferId;
+            Buyer = null;
         }
 
         /// <summary>
@@ -79,6 +106,7 @@ namespace TreasureHunter.Contract.TransactionObjects
             Price = default(double);
             TradeOfferId = tradeOfferId;
             State = default(TradeOfferTransactionState);
+            Buyer = null;
         }
         /// <summary>
         /// Retreive Transaction by ID
@@ -93,6 +121,40 @@ namespace TreasureHunter.Contract.TransactionObjects
             Price = default(double);
             TradeOfferId = null;
             State = default(TradeOfferTransactionState);
+            Buyer = null;
+        }
+
+        /// <summary>
+        /// Update transaction with payment
+        /// </summary>
+        /// <param name="transaction"></param>
+        /// <param name="msg"></param>
+        public TradeOfferTransaction(TradeOfferTransaction transaction, PaymentMessage msg)
+        {
+            Id = transaction.Id;
+            PaidAmmount = msg.PaidAmmount;
+            OfferState = transaction.OfferState;
+            Offer = transaction.Offer;
+            State = transaction.State;
+            Price = transaction.Price;
+            TradeOfferId = transaction.TradeOfferId;
+            Buyer = msg.Buyer;
+        }
+
+        /// <summary>
+        /// Payment without saved ID
+        /// </summary>
+        /// <param name="msg"></param>
+        public TradeOfferTransaction(PaymentMessage msg)
+        {
+            Id = msg.TransactionId;
+            PaidAmmount = msg.PaidAmmount;
+            OfferState = default(TradeOfferState);
+            Offer = null;
+            Price = default(double);
+            TradeOfferId = null;
+            State = TradeOfferTransactionState.Paid;
+            Buyer = msg.Buyer;
         }
     }
 }

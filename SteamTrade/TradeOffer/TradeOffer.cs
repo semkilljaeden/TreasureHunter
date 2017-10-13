@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using log4net;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using SteamKit2;
 
 namespace TreasureHunter.SteamTrade.TradeOffer
@@ -11,28 +12,30 @@ namespace TreasureHunter.SteamTrade.TradeOffer
     public class TradeOffer
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(TradeOffer));
+        [JsonProperty]
         public OfferSession Session { get; set; }
-
+        [JsonProperty]
         public SteamID PartnerSteamId { get; private set; }
-
+        [JsonProperty]
         public TradeStatus Items { get; set; }
-
+        [JsonProperty]
         public string TradeOfferId { get; private set; }
-
+        [JsonProperty]
         public TradeOfferState OfferState { get; private set; }
-
+        [JsonProperty]
         public bool IsOurOffer { get; private set; }
-
+        [JsonProperty]
         public int TimeCreated { get; private set; }
-
+        [JsonProperty]
         public int ExpirationTime { get; private set; }
-
+        [JsonProperty]
         public int TimeUpdated { get; private set; }
-        
+        [JsonProperty]
         public string Message { get; private set; }
-
+        [JsonProperty]
         public bool IsFirstOffer => TimeCreated == TimeUpdated;
 
+        [JsonConstructor]
         public TradeOffer(OfferSession session, SteamID partnerSteamdId)
         {
             Items = new TradeStatus();
@@ -521,7 +524,9 @@ namespace TreasureHunter.SteamTrade.TradeOffer
 
                 public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
                 {
-                    throw new NotImplementedException();
+                    JToken jt = JToken.ReadFrom(reader);
+
+                    return jt.Value<long>();
                 }
 
                 public override bool CanConvert(Type objectType)
