@@ -12,6 +12,7 @@ namespace TreasureHunter.Bot.TransactionObjects
         PartialPaid,
         Completed,
         Expired,
+        TradeOfferError
     }
     public class TradeOfferTransaction
     {
@@ -169,6 +170,18 @@ namespace TreasureHunter.Bot.TransactionObjects
             Buyer = msg.Buyer;
             TimeStamp = DateTime.UtcNow;
             BotPath = null;
+        }
+
+        public override string ToString()
+        {
+            return Environment.NewLine + $"{Id} " + Environment.NewLine +
+                   $"from {Offer.PartnerSteamId}" + Environment.NewLine +
+                   $"OfferState = {OfferState}, " + Environment.NewLine +
+                   $"Price = {Price}" + Environment.NewLine +
+                   $"PaidAmmount = {PaidAmmount}" + Environment.NewLine +
+                   $"Transaction State = {State}" + Environment.NewLine +
+                   $"Buyer = {Buyer}" + Environment.NewLine +
+                   $"TimeStamp = {TimeStamp}";
         }
     }
 }

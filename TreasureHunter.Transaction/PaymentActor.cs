@@ -44,12 +44,12 @@ namespace TreasureHunter.Transaction
                     transaction = new TradeOfferTransaction(msg);
                     Log.Warn($"No transaction id = {msg.TransactionId} found in the Database! Needs support");
                 }
-                var result = _dataAccess.Ask<DataAccessMessage<TradeOfferTransaction>>(new DataAccessMessage<TradeOfferTransaction>(transaction, DataAccessActionType.UpdateTradeOffer)).Result;
+                var result = _dataAccess.Ask<DataAccessMessage<TradeOfferTransaction>>(new DataAccessMessage<TradeOfferTransaction>(transaction, DataAccessActionType.UpdateTradeOffer));
                 if (transaction.State == TradeOfferTransactionState.Completed)
                 {
                     Log.Info($"Transaction {transaction.Id} has been completed already, user paid extra ammount Price = {transaction.Price}, Paid ammount = {transaction.PaidAmmount}");
                 }
-                _bots.FirstOrDefault(b => b.Path.Name == transaction.BotPath)?.Tell(new PaymentNotificationMessage(msg.TransactionId));
+                _bots.FirstOrDefault(b => b.Path.Name == transaction.BotPath)?.Tell(new PaymentNotificationMessage(transaction));
             }
             catch (Exception e)
             {

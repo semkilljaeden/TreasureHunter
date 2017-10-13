@@ -94,7 +94,14 @@ namespace TreasureHunter.Bot
 
         public override void OnTradeOfferUpdated(TradeOffer offer)
         {
-            var escowDuration = Bot.GetEscrowDuration(offer.PartnerSteamId, null);
+            var escowDuration = Bot.GetEscrowDuration(offer.TradeOfferId);
+            var error = Bot.CheckIfBotCanAcceptTradeOffer(offer.TradeOfferId);
+            if (error != null)
+            {
+                SendChatMessage("Bot Unable to Trade. Please Cancel your trade Offer");
+                Log.Error("Bot Unable to Trade £º " + error);
+                return;
+            }
             var itemsTuple = GetItems(offer);
             var ourItemString = Environment.NewLine + string.Join(Environment.NewLine + "              ",
                                     itemsTuple.Item1.Select(i => i.ToString()));
@@ -115,13 +122,8 @@ namespace TreasureHunter.Bot
             {
                 transaction = new TradeOfferTransaction(transaction, offer);
             }
-            Log.Info(Environment.NewLine + $"{transaction.Id} " + Environment.NewLine + 
-                     $"from {Bot.SteamFriends.GetFriendPersonaName(transaction.Offer.PartnerSteamId)} " + Environment.NewLine +
-                     $"OfferState = {transaction.OfferState}, " + Environment.NewLine +
-                     $"Price = {transaction.Price}" + Environment.NewLine +
-                     $"PaidAmmount = {transaction.PaidAmmount}" + Environment.NewLine + 
-                     $"Transaction State = {transaction.State}");
-            if (oldTransaction?.State == transaction.State && oldTransaction?.OfferState == transaction.OfferState)
+            Log.Info(transaction);
+            if (transaction.State != TradeOfferTransactionState.Paid && oldTransaction?.State == transaction.State && oldTransaction?.OfferState == transaction.OfferState) //force update paid status
             {
                 Log.Info("Incoming TradeOffer is not updated, Skip");
                 return;
@@ -133,8 +135,7 @@ namespace TreasureHunter.Bot
                     transaction = new TradeOfferTransaction(transaction, TradeOfferTransactionState.Completed);
                     SendChatMessage("Trade completed, thank you!");
                     Log.Info("Update the Offer...");
-                    Bot
-                        .UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
+                    Bot.UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
                     return;
                 case TradeOfferState.TradeOfferStateActive:
                     Log.Info("Update the Offer...");
@@ -183,17 +184,25 @@ namespace TreasureHunter.Bot
                     Log.Info("Update the Offer...");
                     Bot
                         .UpdateTradeOffer(transaction, DataAccessActionType.UpdateTradeOffer);
-                    Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} Needs {(offer.IsOurOffer ? "bot" : offer.TradeOfferId)} Confirmation");                    
+                    Log.Info($"Trade offer {offer.TradeOfferId} from {Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)} Needs Confirmation - " + Environment.NewLine
+                            + "Bot:" + (offer.Items.GetMyItems().Count > 0) + Environment.NewLine
+                            + "{Bot.SteamFriends.GetFriendPersonaName(offer.PartnerSteamId)}: " + (offer.Items.GetTheirItems().Count > 0));                    
                     switch (transaction.State)
                     {
                         case TradeOfferTransactionState.Completed:                          
-                            if (!offer.IsOurOffer)
+                            if (offer.Items.GetTheirItems().Count > 0)
                             {
                                 SendChatMessage($"Please Confirm Trade");
                             }
                             break;
-                        case TradeOfferTransactionState.New:
                         case TradeOfferTransactionState.Paid:
+                            if (offer.Items.GetTheirItems().Count > 0)
+                            {
+                                SendChatMessage($"Please Confirm Trade");
+                            }
+                            Bot.PaymentNotifySelf(transaction);
+                            break;
+                        case TradeOfferTransactionState.New:                        
                         case TradeOfferTransactionState.PartialPaid:
                             Log.Error("Trade reachs confirmation stage but transaction is at " + transaction.State);
                             break;

@@ -217,7 +217,7 @@ namespace TreasureHunter.Bot
             MaximumActionGap = config.MaximumActionGap;
             DisplayNamePrefix = config.DisplayNamePrefix;
             _tradePollingInterval = config.TradePollingInterval <= 100 ? 800 : config.TradePollingInterval;
-            _tradeOfferPollingIntervalSecs = (config.TradeOfferPollingIntervalSecs == 0 ? 30 : config.TradeOfferPollingIntervalSecs);
+            _tradeOfferPollingIntervalSecs = (config.TradeOfferPollingIntervalSecs == 0 ? 3 : config.TradeOfferPollingIntervalSecs);
             _schemaLang = config.SchemaLang != null && config.SchemaLang.Length == 2 ? config.SchemaLang.ToLower() : "en";
             Admins = config.Admins;
             ApiKey = !String.IsNullOrEmpty(config.ApiKey) ? config.ApiKey : apiKey;
@@ -407,7 +407,7 @@ namespace TreasureHunter.Bot
 
         public void PaymentNotifySelf(TradeOfferTransaction transaction)
         {
-            Self.Tell(new PaymentNotificationMessage(transaction.Id), _mySelf);
+            Self.Tell(new PaymentNotificationMessage(transaction), _mySelf);
         }
 
         public double Valuate(List<Schema.Item> myItems, List<Schema.Item> theirItems)
@@ -421,10 +421,7 @@ namespace TreasureHunter.Bot
 
         private void OnPaymentUpdate(PaymentNotificationMessage msg)
         {
-            var transaction = _dataAccessActor
-                .Ask<DataAccessMessage<TradeOfferTransaction>>(new DataAccessMessage<TradeOfferTransaction>(
-                    new TradeOfferTransaction(msg.PaymentId), DataAccessActionType.Retrieve))
-                .Result.Content;
+            var transaction = msg.Transaction;
 
             if (transaction == null)
             {
@@ -467,6 +464,8 @@ namespace TreasureHunter.Bot
                 else
                 {
                     Log.Warn("Trade Accept Attempt Fails, Error: " + acceptResp.TradeError);
+                    SteamFriends.SendChatMessage(transaction.Offer.PartnerSteamId, EChatEntryType.ChatMsg,
+                        $"Trade Id = {transaction.Id},  -------> Bot Accept Trade Attempt Fails, Error:{acceptResp.TradeError} Please contact Support");
                 }
             }
         }
@@ -900,6 +899,22 @@ namespace TreasureHunter.Bot
             return ParseEscrowResponse(resp);
         }
 
+        public string CheckIfBotCanAcceptTradeOffer(string tradeOfferId)
+        {
+            var url = "http://steamcommunity.com/tradeoffer/" + tradeOfferId;
+
+            var resp = SteamWeb.Fetch(url, "GET", null, false);
+            if (string.IsNullOrWhiteSpace(resp))
+            {
+                throw new NullReferenceException("Empty response from Steam when trying to retrieve escrow duration.");
+            }
+            var steamErrorM = Regex.Match(resp, @"<div id=""error_msg"">([^>]+)<\/div>", RegexOptions.IgnoreCase);
+            if (steamErrorM.Groups.Count > 1)
+            {
+                return steamErrorM.Value;
+            }
+            return null;
+        }
         private TradeOfferEscrowDuration ParseEscrowResponse(string resp)
         {
             var myM = Regex.Match(resp, @"g_daysMyEscrow(?:[\s=]+)(?<days>[\d]+);", RegexOptions.IgnoreCase);
@@ -909,19 +924,21 @@ namespace TreasureHunter.Bot
                 var steamErrorM = Regex.Match(resp, @"<div id=""error_msg"">([^>]+)<\/div>", RegexOptions.IgnoreCase);
                 if (steamErrorM.Groups.Count > 1)
                 {
-                    var steamError = Regex.Replace(steamErrorM.Groups[1].Value.Trim(), @"\t|\n|\r", ""); ;
-                    throw new TradeOfferEscrowDurationParseException(steamError);
+                    Log.Warn("Escow parsing:" + steamErrorM);
                 }
                 else
                 {
-                    throw new TradeOfferEscrowDurationParseException(string.Empty);
+                    Log.Warn("Escow parsing:" + string.Empty);
                 }
             }
-
+            int my = -1;
+            int their = -1;
+            int.TryParse(myM.Groups["days"].Value, out my);
+            int.TryParse(theirM.Groups["days"].Value, out their);
             return new TradeOfferEscrowDuration()
             {
-                DaysMyEscrow = int.Parse(myM.Groups["days"].Value),
-                DaysTheirEscrow = int.Parse(theirM.Groups["days"].Value)
+                DaysMyEscrow = my,
+                DaysTheirEscrow = their
             };
         }
 

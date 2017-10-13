@@ -35,7 +35,7 @@
 						"MaximumActionGap": 30,
 						"DisplayNamePrefix": "[Kiljaeden's Bot] ",
 						"TradePollingInterval": 800,
-						"TradeOfferPollingIntervalSecs": 30,
+						"TradeOfferPollingIntervalSecs": 3,
 						"ConsoleLogLevel": "Success",
 						"FileLogLevel": "Info",
 						"AutoStart": "true",

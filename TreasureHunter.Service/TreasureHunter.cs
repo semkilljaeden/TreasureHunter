@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Configuration;
 using Akka.Routing;
 using Akka.Util.Internal;
 using log4net;
@@ -27,7 +28,11 @@ namespace TreasureHunter.Service
                 Log.Error("No config json, program exit");
                 return;
             }
-            _system = ActorSystem.Create("TreasureHunter");
+            var disableJsonWarning = ConfigurationFactory.ParseString(@"
+                    akka {
+                            suppress-json-serializer-warning = on
+                         }");
+            _system = ActorSystem.Create("TreasureHunter", disableJsonWarning);
             var actors = new List<IActorRef>();          
             var valuationActor = _system.ActorOf(ValuationActor.Props(), "Valuation");
             var commander = _system.ActorOf(CommandActor.Props(actors), "Commander");
