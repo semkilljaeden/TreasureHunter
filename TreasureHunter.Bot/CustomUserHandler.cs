@@ -98,9 +98,16 @@ namespace TreasureHunter.Bot
             var error = Bot.CheckIfBotCanAcceptTradeOffer(offer.TradeOfferId);
             if (error != null)
             {
-                SendChatMessage("Bot Unable to Trade. Please Cancel your trade Offer");
-                Log.Error("Bot Unable to Trade £º " + error);
-                return;
+                Log.Warn(error);
+                if (error.Contains("unable to trade"))
+                {
+                    SendChatMessage("Bot Unable to Trade. Please Cancel your trade Offer");
+                    return;
+                }
+                if (error.Contains("This trade offer is no longer valid."))
+                {
+                    return;
+                }
             }
             var itemsTuple = GetItems(offer);
             var ourItemString = Environment.NewLine + string.Join(Environment.NewLine + "              ",

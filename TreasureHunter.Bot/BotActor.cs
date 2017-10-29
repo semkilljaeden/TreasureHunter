@@ -407,7 +407,7 @@ namespace TreasureHunter.Bot
 
         public void PaymentNotifySelf(TradeOfferTransaction transaction)
         {
-            Self.Tell(new PaymentNotificationMessage(transaction), _mySelf);
+            _mySelf.Tell(new PaymentNotificationMessage(transaction), _mySelf);
         }
 
         public double Valuate(List<Schema.Item> myItems, List<Schema.Item> theirItems)
@@ -901,14 +901,14 @@ namespace TreasureHunter.Bot
 
         public string CheckIfBotCanAcceptTradeOffer(string tradeOfferId)
         {
-            var url = "http://steamcommunity.com/tradeoffer/" + tradeOfferId;
+            var url = "http://steamcommunity.com/tradeoffer/" + tradeOfferId + "?l=english";
 
             var resp = SteamWeb.Fetch(url, "GET", null, false);
             if (string.IsNullOrWhiteSpace(resp))
             {
                 throw new NullReferenceException("Empty response from Steam when trying to retrieve escrow duration.");
             }
-            var steamErrorM = Regex.Match(resp, @"<div id=""error_msg"">([^>]+)<\/div>", RegexOptions.IgnoreCase);
+            var steamErrorM = Regex.Match(resp, @"(?<=<div id=""error_msg"">)([^>]+)(?=<\/div>)", RegexOptions.IgnoreCase);
             if (steamErrorM.Groups.Count > 1)
             {
                 return steamErrorM.Value;
@@ -919,18 +919,6 @@ namespace TreasureHunter.Bot
         {
             var myM = Regex.Match(resp, @"g_daysMyEscrow(?:[\s=]+)(?<days>[\d]+);", RegexOptions.IgnoreCase);
             var theirM = Regex.Match(resp, @"g_daysTheirEscrow(?:[\s=]+)(?<days>[\d]+);", RegexOptions.IgnoreCase);
-            if (!myM.Groups["days"].Success || !theirM.Groups["days"].Success)
-            {
-                var steamErrorM = Regex.Match(resp, @"<div id=""error_msg"">([^>]+)<\/div>", RegexOptions.IgnoreCase);
-                if (steamErrorM.Groups.Count > 1)
-                {
-                    Log.Warn("Escow parsing:" + steamErrorM);
-                }
-                else
-                {
-                    Log.Warn("Escow parsing:" + string.Empty);
-                }
-            }
             int my = -1;
             int their = -1;
             int.TryParse(myM.Groups["days"].Value, out my);

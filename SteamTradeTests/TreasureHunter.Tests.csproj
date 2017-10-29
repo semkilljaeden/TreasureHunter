@@ -94,6 +94,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="AccessorTests.cs" />
+    <Compile Include="AccountMonitorTests.cs" />
     <Compile Include="DotaSchemaTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -120,6 +121,10 @@
     <ProjectReference Include="..\TreasureHunter.DataAccess\TreasureHunter.DataAccess.csproj">
       <Project>{61FEE5E9-E0C0-4893-957E-A7F5FE2492F5}</Project>
       <Name>TreasureHunter.DataAccess</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TreasureHunter.SecretShop\TreasureHunter.SecretShop.csproj">
+      <Project>{DF18B2E5-0828-4ABA-824D-3F658523B80E}</Project>
+      <Name>TreasureHunter.SecretShop</Name>
     </ProjectReference>
   </ItemGroup>
   <Choose>
