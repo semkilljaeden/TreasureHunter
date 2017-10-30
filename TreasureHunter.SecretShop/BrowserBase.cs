@@ -8,20 +8,17 @@ using CefSharp;
 using CefSharp.OffScreen;
 using log4net;
 using log4net.Repository.Hierarchy;
-
+using Akka.Actor;
+using TreasureHunter.Contract;
 namespace TreasureHunter.SecretShop
 {
-    public abstract class BrowserWatcherBase
+    public abstract class BrowserWatcherBase : InputActor
     {
         #region Thread Share Fields
         protected volatile bool IsDownloadCompleted = false;
         protected volatile string DownloadFileName = "";
         protected AutoResetEvent PageAnalyzeFinished = new AutoResetEvent(false);
         protected readonly string TempFolderPath;
-        protected BrowserWatcherBase(string temp)
-        {
-            TempFolderPath = temp;
-        }
 
         #endregion
         private static readonly ILog Log = LogManager.GetLogger(typeof(BrowserWatcherBase));
@@ -133,6 +130,12 @@ namespace TreasureHunter.SecretShop
                 Log.Error("Problem reading cookies from disk: ", ex);
                 return null;
             }
+        }
+
+        protected BrowserWatcherBase(IActorRef commander, string temp) :
+            base(commander)
+        {
+            TempFolderPath = temp;
         }
     }
 

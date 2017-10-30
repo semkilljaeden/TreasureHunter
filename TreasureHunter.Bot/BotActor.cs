@@ -16,26 +16,25 @@ using SteamKit2.GC.Dota.Internal;
 using SteamKit2.Internal;
 using TreasureHunter.Bot.SteamGroups;
 using TreasureHunter.Bot.TransactionObjects;
+using TreasureHunter.Contract;
 using TreasureHunter.Service;
 using TreasureHunter.SteamTrade;
 using TreasureHunter.SteamTrade.TradeOffer;
 using TreasureHunter.Contract.AkkaMessageObject;
 namespace TreasureHunter.Bot
 {
-    public class BotActor : ReceiveActor
+    public class BotActor : InputActor
     {
         #region Akka
 
         private readonly IActorRef _valuationActor;
-        private readonly IActorRef _commandActor;
         private readonly IActorRef _dataAccessActor;
         private readonly IActorRef _mySelf;
         public string BotName => _mySelf.Path.Name;
-        public BotActor(Configuration.BotInfo info, string apiKey, UserHandlerCreator creator, IActorRef valuationActor, IActorRef commandActor, IActorRef dataAccessActor) :
-            this(info, apiKey, creator, false, false)
+        public BotActor(IActorRef valuationActor, IActorRef commandActor, IActorRef dataAccessActor) :
+            base(commandActor)
         {
             _valuationActor = valuationActor;
-            _commandActor = commandActor;
             _dataAccessActor = dataAccessActor;
             Receive<CommandMessage>(msg => RunCommand(msg));
             Receive<PaymentNotificationMessage>(msg => OnPaymentUpdate(msg));
@@ -81,7 +80,7 @@ namespace TreasureHunter.Bot
                     HandleBotCommand(commandMessage.MessageText);
                     break;
                 case CommandMessage.MessageType.Input:
-                    _threadCommunicator.Enqueue(commandMessage.MessageText);
+                    ThreadCommunicator.Enqueue(commandMessage.MessageText);
                     break;
                 case CommandMessage.MessageType.ReleaseItem:
                     break;
@@ -203,7 +202,8 @@ namespace TreasureHunter.Bot
         public CallbackManager SteamCallbackManager { get; }
 
 
-        public BotActor(Configuration.BotInfo config, string apiKey, UserHandlerCreator handlerCreator, bool debug = false, bool process = false)
+        public BotActor(Configuration.BotInfo config, string apiKey, UserHandlerCreator creator, IActorRef valuationActor, IActorRef commandActor, IActorRef dataAccessActor) :
+            this(valuationActor, commandActor, dataAccessActor)
         {
             _userHandlers = new Dictionary<SteamID, UserHandler>();
             _logOnDetails = new SteamUser.LogOnDetails
@@ -221,7 +221,7 @@ namespace TreasureHunter.Bot
             _schemaLang = config.SchemaLang != null && config.SchemaLang.Length == 2 ? config.SchemaLang.ToLower() : "en";
             Admins = config.Admins;
             ApiKey = !String.IsNullOrEmpty(config.ApiKey) ? config.ApiKey : apiKey;
-            _createHandler = handlerCreator;
+            _createHandler = creator;
             SteamWeb = new SteamWeb();
 
             // Hacking around https
@@ -237,7 +237,6 @@ namespace TreasureHunter.Bot
             SteamFriends = SteamClient.GetHandler<SteamFriends>();
             SteamGameCoordinator = SteamClient.GetHandler<SteamGameCoordinator>();
             SteamNotifications = SteamClient.GetHandler<SteamNotifications>();
-            _threadCommunicator = new ConcurrentQueue<string>();
             _botThread = new BackgroundWorker { WorkerSupportsCancellation = true };
             _botThread.DoWork += BackgroundWorkerOnDoWork;
             _botThread.RunWorkerCompleted += BackgroundWorkerOnRunWorkerCompleted;
@@ -946,26 +945,8 @@ namespace TreasureHunter.Bot
         /// </summary>
 
         #region Background/Polling Worker Methods
-        private readonly ConcurrentQueue<string> _threadCommunicator;
         private readonly BackgroundWorker _botThread;
 
-
-        public string WaitForInput(string message)
-        {
-            string input;
-            int seconds = 20;
-            _commandActor.Tell(new ActorCommandMessage()
-            {
-                Text = message + $" You have {seconds} seconds to enter the value"
-            }, _mySelf);
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            while (!_threadCommunicator.TryDequeue(out input) && stopwatch.Elapsed < TimeSpan.FromSeconds(seconds))
-            {
-                
-            }
-            return input;
-        }
         protected void SpawnTradeOfferPollingThread()
         {
             if (_tradeOfferThread == null)

@@ -11,7 +11,7 @@ using TreasureHunter.Contract.AkkaMessageObject;
 
 namespace TreasureHunter.Service
 {
-    class CommandActor : ReceiveActor
+    public class CommandActor : ReceiveActor
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(CommandActor));
         private readonly CommandSet _p;
