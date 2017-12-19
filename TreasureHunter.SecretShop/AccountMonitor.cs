@@ -64,28 +64,41 @@ namespace TreasureHunter.SecretShop
                 scriptTask = await wb.EvaluateScriptAsync(
                     $"document.getElementById('UID')");
             }
-            await wb.SavePageScreenShot(@"C:\Users\killjaeden\Desktop\a.png");
+            await wb.SavePageScreenShot(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\a.png");
             string date = ConfigurationManager.AppSettings["TradeDate"]?.ToString();
-            scriptTask = await wb.EvaluateScriptAsync(
-                $"document.getElementById('UID').value = '{""}'");
-            scriptTask = await wb.EvaluateScriptAsync(
-                $"document.getElementById('PIN').value = '{""}'");
+            while (!(await wb.EvaluateScriptAsync(
+                $"document.getElementById('UID').value = '{"killjaeden"}'")).Success)
+            {
+                
+            }
+            while (!(await wb.EvaluateScriptAsync(
+                $"document.getElementById('PIN').value = '{"910306"}'")).Success)
+            {
+                
+            }
+            await wb.SavePageScreenShot(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\a.png");
+            while (!(await wb.EvaluateScriptAsync(
+                $"document.getElementsByClassName('btn btn-primary block mBot-12')[0].click()")).Success)
+            {
+                
+            }
             wb.LoadingStateChanged -= Login;
             wb.LoadingStateChanged += Dashboard;
-            scriptTask = await wb.EvaluateScriptAsync(
-                $"document.getElementsByClassName('btn btn-primary block mBot-12')[0].click()");
         }
 
         private async void Dashboard(object s, LoadingStateChangedEventArgs e)
         {
             var wb = s as ChromiumWebBrowser;
+
             if (e.IsLoading || wb == null)
             {
                 return;
             }
+            var scriptTask = await wb.EvaluateXPathScriptAsync(@"//a[contains(., 'POSB')]", "");
+            await wb.SavePageScreenShot(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\a.png");
+            await wb.SavePageScreenShot(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\a.png");
             Log.Info("Logged in");
-            var scriptTask = await wb.EvaluateScriptAsync(
-                $"getTransactionHistory('INDEX_1','0011')");
+            scriptTask = await wb.EvaluateXPathScriptAsync(@"//a[contains(., 'POSB')]", ".click()");
             wb.LoadingStateChanged -= Dashboard;
             wb.LoadingStateChanged += Monitor;
         }
@@ -97,8 +110,14 @@ namespace TreasureHunter.SecretShop
             {
                 return;
             }
-            await wb.SavePageScreenShot(@"C:\Users\killjaeden\Desktop\a.png");
+            await wb.SavePageScreenShot(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\a.png");
             Log.Info("Enter Otp for Ibanking");
+            while (true)
+            {
+                var scriptTask = (await wb.EvaluateScriptAsync(
+                    $"javascript:getTransactionHistory('INDEX_1','0011')"));
+                await wb.SavePageScreenShot(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\a.png");
+            }
             var otp = WaitForInput("Enter OTP for IBanking Logging in");            
             PageAnalyzeFinished.Set();
         }

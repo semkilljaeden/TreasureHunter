@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.0
+VisualStudioVersion = 15.0.27004.2009
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreasureHunter.SteamTrade", "SteamTrade\TreasureHunter.SteamTrade.csproj", "{BDA9A4A1-3B68-4F9E-BE97-E2C11263B14B}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreasureHunter.Bot", "TreasureHunter.Bot\TreasureHunter.Bot.csproj", "{6EB4F300-53EE-4F08-831F-55D4EDD6806A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreasureHunter.SecretShop", "TreasureHunter.SecretShop\TreasureHunter.SecretShop.csproj", "{DF18B2E5-0828-4ABA-824D-3F658523B80E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreasureHunter.UI", "TreasureHunter.UI\TreasureHunter.UI.csproj", "{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -134,8 +136,23 @@ Global
 		{DF18B2E5-0828-4ABA-824D-3F658523B80E}.Test|Any CPU.Build.0 = Release|Any CPU
 		{DF18B2E5-0828-4ABA-824D-3F658523B80E}.Test|x64.ActiveCfg = Release|Any CPU
 		{DF18B2E5-0828-4ABA-824D-3F658523B80E}.Test|x64.Build.0 = Release|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Debug|x64.Build.0 = Debug|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Release|x64.ActiveCfg = Release|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Release|x64.Build.0 = Release|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Test|Any CPU.ActiveCfg = Release|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Test|Any CPU.Build.0 = Release|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Test|x64.ActiveCfg = Release|Any CPU
+		{0BA67F67-9EAD-4765-87D6-B88C69ED8B6C}.Test|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E0A0D5FC-6977-4A77-96EF-734086378AD2}
 	EndGlobalSection
 EndGlobal
